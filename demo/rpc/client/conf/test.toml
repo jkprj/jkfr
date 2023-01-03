@@ -1,0 +1,15 @@
+[Client]
+#RateLimit = 2.0
+ConsulTags = ["123", "jinkun"]
+Strategy = "random"
+TimeOut = 30
+CallTimeOut = 30
+Retry = 5
+PoolCap = 5
+MaxCap = 100
+KeepAlive = true
+IdleTimeout = 600
+
+[Registry]
+#ConsulAddr = "127.0.0.1:8500"
+ConsulAddr = "192.168.137.90:8500"

@@ -1,0 +1,8 @@
+[Server]
+ServerAddr = "127.0.0.1:6666"
+#RateLimit = 1.0
+RpcName = "HelloWord"
+
+[Registry]
+ConsulAddr = "127.0.0.1:8500"
+ConsulTags = ["rpc", "123", "jinkun", "qjk"]

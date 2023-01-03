@@ -1,0 +1,29 @@
+{
+	"Server":{
+		"#ServerAddr":"192.168.213.184:9090",
+		"RateLimit": 10
+	},
+	"Registry":{
+		"ConsulAddr":"127.0.0.1:8500",
+		"ConsulTags": ["123", "jinkun", "qjk"]
+	},
+	"GRPC":{
+		"WriteBufferSize": 102400,
+		"ReadBufferSize": 102400,
+		"MaxMsgSize": 10240000,
+		"MaxRecvMsgSize": 10240000,
+		"MaxSendMsgSize": 10240000,
+		"ConnectionTimeout": 5,
+		"EnableCompressor": true,
+		
+		"CompressorLevel_Remark": "NoCompression=0, BestSpeed=1, BestCompression=9, DefaultCompression=-1",
+		"CompressorLevel": 9
+	},
+	"Keepalive":{
+		"MaxConnectionIdle": 600,
+		"MaxConnectionAge": 72000,
+		"MaxConnectionAgeGrace": 72000,
+		"Time": 1800,
+		"Timeout": 20
+	}
+}

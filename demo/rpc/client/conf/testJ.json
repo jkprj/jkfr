@@ -1,0 +1,17 @@
+{
+    "Client": {
+        "RateLimit": 2,
+        "ConsulTags": ["123", "jinkun"],
+        "Strategy": "random",
+        "Retry": 3,
+        "TimeOut": 30,
+        "CallTimeOut": 30,
+        "PoolCap": 5,
+        "MaxCap": 100,
+        "IdleTimeout": 600,
+        "KeepAlive": false
+    },
+    "Registry": {
+        "ConsulAddr": "192.168.213.184:8500"
+    }
+}

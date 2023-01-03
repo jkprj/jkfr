@@ -1,0 +1,11 @@
+[Client]
+ServerAddr = "192.168.213.184:8080"
+RateLimit = 2.0
+ConsulTags = ["123"]
+Strategy = "random"
+Scheme = "http"
+TimeOut = 30
+Retry = 5
+
+[Registry]
+ConsulAddr = "192.168.213.184:8500"

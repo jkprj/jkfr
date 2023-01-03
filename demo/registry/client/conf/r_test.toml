@@ -1,0 +1,4 @@
+[Registry]
+ConsulAddr = "192.168.213.184:8500"
+ConsulTags = ["123"]
+PassingOnly = true

@@ -1,0 +1,24 @@
+[Client]
+#RateLimit = 2.0
+#ConsulTags = ["123"]
+#Strategy = "least"
+#TimeOut = 30
+Retry = 3
+#KeepAlive = true
+
+[Registry]
+ConsulAddr = "127.0.0.1:8500"
+
+#[GRPC]
+#WriteBufferSize = 102400
+#ReadBufferSize = 102400
+#MaxMsgSize = 10240000
+#Timeout = 300
+#EnableCompressor = true
+##NoCompression=0, BestSpeed=1, BestCompression=9, DefaultCompression=-1
+#CompressorLevel = 9
+
+#[Keepalive]
+#PermitWithoutStream = false
+#Time = 1800
+#Timeout = 20

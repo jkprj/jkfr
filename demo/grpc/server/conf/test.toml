@@ -1,0 +1,26 @@
+[Server]
+BindAddr = ":9900"
+ServerAddr = "192.168.213.184:9900"
+#RateLimit = 2.0
+
+[Registry]
+ConsulAddr = "192.168.213.184:8500"
+
+[GRPC]
+WriteBufferSize = 102400
+ReadBufferSize = 102400
+MaxMsgSize = 10240000
+MaxRecvMsgSize = 10240000
+MaxSendMsgSize = 10240000
+ConnectionTimeout = 5
+#EnableCompressor = true
+
+#NoCompression=0, BestSpeed=1, BestCompression=9, DefaultCompression=-1
+#CompressorLevel = 9
+
+[Keepalive]
+MaxConnectionIdle = 600
+MaxConnectionAge = 72000
+MaxConnectionAgeGrace = 72000
+Time = 1800
+Timeout = 20

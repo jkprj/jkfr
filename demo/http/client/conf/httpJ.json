@@ -1,0 +1,13 @@
+{
+	"Client":{
+		"RateLimit": 10,
+		"ConsulTags": ["123"],
+		"Strategy": "random",
+		"Scheme": "http",
+		"TimeOut": 30,
+		"Retry": 5
+	},
+	"Registry":{
+		"ConsulAddr":"192.168.213.184:8500"
+	}
+}

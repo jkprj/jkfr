@@ -1,0 +1,12 @@
+{
+	"Registry":{
+		"ServerAddr":"192.168.213.184:8888",
+		"ConsulAddr":"192.168.213.184:8500",
+		"HealthCheckAddr":"192.168.213.184",
+		"HealthCheckInterval":1,
+		"HealthCheckTimeOut":1,
+		"ConsulTags":["qjk","jinkun", "123", "test"],
+		"WaitTime":5,
+		"PrometheusNameSpace":"jk"
+	}
+}

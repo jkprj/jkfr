@@ -1,0 +1,7 @@
+{
+	"Registry":{
+		"ConsulAddr":"192.168.213.184:8500",
+		"PassingOnly":true,
+		"ConsulTags":["123"]
+	}
+}

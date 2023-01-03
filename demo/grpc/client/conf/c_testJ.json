@@ -1,0 +1,27 @@
+{
+    "Client": {
+        "RateLimit": 2,
+        "ConsulTags": ["123"],
+        "Strategy": "random",
+        "Retry": 3,
+        "TimeOut": 30,
+        "KeepAlive": false
+    },
+    "Registry": {
+        "ConsulAddr": "192.168.213.184:8500"
+    },
+    "GRPC": {
+        "WriteBufferSize": 102400,
+        "ReadBufferSize": 102400,
+        "MaxMsgSize": 10240000,
+        "TimeOut": 300,
+        "EnableCompressor": true,
+        "CompressorLevel_remark": "NoCompression=0, BestSpeed=1, BestCompression=9, DefaultCompression=-1",
+        "CompressorLevel": 8
+    },
+    "Keepalive": {
+        "PermitWithoutStream": false,
+        "Time": 1800,
+        "TimeOut": 20
+    }
+}
