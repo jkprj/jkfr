@@ -1,4 +1,4 @@
-module jkfr
+module github.com/jkprj/jkfr
 
 go 1.13
 

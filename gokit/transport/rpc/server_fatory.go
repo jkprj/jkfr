@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"net/rpc/jsonrpc"
 
-	jktrans "jkfr/gokit/transport"
-	jktls "jkfr/gokit/utils/tls"
-	jklog "jkfr/log"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jktls "github.com/jkprj/jkfr/gokit/utils/tls"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 type CreateListenerFunc func(cfg *ServerConfig) (net.Listener, error)

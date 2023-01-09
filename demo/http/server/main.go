@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"runtime"
 
-	jkregistry "jkfr/gokit/registry"
-	jkhttp "jkfr/gokit/transport/http"
-	jklog "jkfr/log"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jkhttp "github.com/jkprj/jkfr/gokit/transport/http"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 type res struct {

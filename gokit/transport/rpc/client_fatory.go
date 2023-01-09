@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	// "jkfr/gokit/transport/rpc/pool"
-	"jkfr/gokit/transport/pool"
-	rpcpool "jkfr/gokit/transport/pool/rpc"
+	// "github.com/jkprj/jkfr/gokit/transport/rpc/pool"
+	"github.com/jkprj/jkfr/gokit/transport/pool"
+	rpcpool "github.com/jkprj/jkfr/gokit/transport/pool/rpc"
 )
 
 type ClientFatory func(cfg *ClientConfig) pool.ClientFatory

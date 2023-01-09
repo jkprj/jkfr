@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"jkfr/demo/rpc/server/hello"
+	"github.com/jkprj/jkfr/demo/rpc/server/hello"
 
 	"github.com/go-kit/kit/endpoint"
 )

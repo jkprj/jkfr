@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	ut "jkfr/gokit/transport"
-	jkpool "jkfr/gokit/transport/pool"
-	urand "jkfr/gokit/utils/rand"
-	"jkfr/log"
+	ut "github.com/jkprj/jkfr/gokit/transport"
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	urand "github.com/jkprj/jkfr/gokit/utils/rand"
+	"github.com/jkprj/jkfr/log"
 )
 
 type GetPoolFunc func() *stpool

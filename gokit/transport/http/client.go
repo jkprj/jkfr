@@ -13,12 +13,12 @@ import (
 	"sync"
 	"time"
 
-	kitlog "jkfr/gokit/log"
-	jkregistry "jkfr/gokit/registry"
-	jktrans "jkfr/gokit/transport"
-	jkendpoint "jkfr/gokit/transport/endpoint"
-	jklb "jkfr/gokit/utils/lb"
-	jklog "jkfr/log"
+	kitlog "github.com/jkprj/jkfr/gokit/log"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
+	jklb "github.com/jkprj/jkfr/gokit/utils/lb"
+	jklog "github.com/jkprj/jkfr/log"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/sd"

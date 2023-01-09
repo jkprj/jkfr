@@ -1,14 +1,15 @@
 package rpc
 
 import (
-	"jkfr/gokit/utils"
 	"net/http"
 	"net/rpc"
 
-	jkregistry "jkfr/gokit/registry"
-	jktrans "jkfr/gokit/transport"
-	jkendpoint "jkfr/gokit/transport/endpoint"
-	jkos "jkfr/os"
+	"github.com/jkprj/jkfr/gokit/utils"
+
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
+	jkos "github.com/jkprj/jkfr/os"
 
 	"golang.org/x/time/rate"
 )

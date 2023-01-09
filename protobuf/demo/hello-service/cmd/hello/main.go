@@ -9,7 +9,7 @@ import (
 	"flag"
 
 	// This Service
-	"jkfr/protobuf/demo/hello-service/svc/server"
+	"github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/server"
 )
 
 func main() {

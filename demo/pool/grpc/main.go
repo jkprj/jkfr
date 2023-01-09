@@ -6,11 +6,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	jkpool "jkfr/gokit/transport/pool"
-	grpc_pools "jkfr/gokit/transport/pool/grpc"
-	"jkfr/log"
-	pb "jkfr/protobuf/demo"
-	hellogrpc "jkfr/protobuf/demo/hello-service/svc/client/grpc"
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	grpc_pools "github.com/jkprj/jkfr/gokit/transport/pool/grpc"
+	"github.com/jkprj/jkfr/log"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
+	hellogrpc "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/client/grpc"
 
 	"google.golang.org/grpc"
 )

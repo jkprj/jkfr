@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"net/rpc"
 
-	jktrans "jkfr/gokit/transport"
-	jkpool "jkfr/gokit/transport/pool"
-	jktls "jkfr/gokit/utils/tls"
-	jklog "jkfr/log"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	jktls "github.com/jkprj/jkfr/gokit/utils/tls"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 var connected = "200 Connected to Go RPC"

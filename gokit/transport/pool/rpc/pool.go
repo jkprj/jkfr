@@ -3,12 +3,13 @@ package rpc
 import (
 	"context"
 	"errors"
-	"jkfr/log"
 	"net"
 	"net/rpc"
 	"time"
 
-	jkpool "jkfr/gokit/transport/pool"
+	"github.com/jkprj/jkfr/log"
+
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
 )
 
 type RpcPool struct {

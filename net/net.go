@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	jklog "jkfr/log"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 func GetFreePort() (port int) {

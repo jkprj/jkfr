@@ -1,7 +1,7 @@
 package histogram
 
 import (
-	"jkfr/prometheus/utils"
+	"github.com/jkprj/jkfr/prometheus/utils"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

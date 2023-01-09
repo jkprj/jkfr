@@ -3,10 +3,10 @@ package main
 import (
 	"runtime"
 
-	"jkfr/demo/rpc/server/hello/endpoints"
-	jkregistry "jkfr/gokit/registry"
-	jkrpc "jkfr/gokit/transport/rpc"
-	jklog "jkfr/log"
+	"github.com/jkprj/jkfr/demo/rpc/server/hello/endpoints"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jkrpc "github.com/jkprj/jkfr/gokit/transport/rpc"
+	jklog "github.com/jkprj/jkfr/log"
 	// "github.com/hashicorp/consul/api"
 )
 

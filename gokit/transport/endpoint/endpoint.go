@@ -5,11 +5,11 @@ import (
 	"math"
 	"time"
 
-	uprometheus "jkfr/gokit/prometheus"
-	jklog "jkfr/log"
-	jkos "jkfr/os"
-	ucounter "jkfr/prometheus/counter"
-	uhistogram "jkfr/prometheus/histogram"
+	uprometheus "github.com/jkprj/jkfr/gokit/prometheus"
+	jklog "github.com/jkprj/jkfr/log"
+	jkos "github.com/jkprj/jkfr/os"
+	ucounter "github.com/jkprj/jkfr/prometheus/counter"
+	uhistogram "github.com/jkprj/jkfr/prometheus/histogram"
 
 	"golang.org/x/time/rate"
 

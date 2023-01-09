@@ -22,8 +22,8 @@ import (
 	"github.com/pkg/errors"
 
 	// This Service
-	pb "jkfr/protobuf/demo"
-	"jkfr/protobuf/demo/hello-service/svc"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
+	"github.com/jkprj/jkfr/protobuf/demo/hello-service/svc"
 )
 
 var (

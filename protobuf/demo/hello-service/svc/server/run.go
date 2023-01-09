@@ -18,9 +18,9 @@ import (
 	"google.golang.org/grpc"
 
 	// This Service
-	pb "jkfr/protobuf/demo"
-	"jkfr/protobuf/demo/hello-service/handlers"
-	"jkfr/protobuf/demo/hello-service/svc"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
+	"github.com/jkprj/jkfr/protobuf/demo/hello-service/handlers"
+	"github.com/jkprj/jkfr/protobuf/demo/hello-service/svc"
 )
 
 var DefaultConfig Config

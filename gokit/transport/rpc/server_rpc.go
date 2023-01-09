@@ -6,8 +6,8 @@ import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
 
-	jktrans "jkfr/gokit/transport"
-	jklog "jkfr/log"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 type Server struct {

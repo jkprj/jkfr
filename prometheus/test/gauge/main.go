@@ -1,13 +1,14 @@
 package main
 
 import (
-	"jkfr/prometheus"
-	"jkfr/prometheus/gauge"
-	"jkfr/prometheus/psutil"
 	"log"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/jkprj/jkfr/prometheus"
+	"github.com/jkprj/jkfr/prometheus/gauge"
+	"github.com/jkprj/jkfr/prometheus/psutil"
 )
 
 var goroutineCount int64 = 0

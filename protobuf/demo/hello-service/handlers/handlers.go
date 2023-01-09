@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 
-	pb "jkfr/protobuf/demo"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
 )
 
 // NewService returns a naïve, stateless implementation of Service.

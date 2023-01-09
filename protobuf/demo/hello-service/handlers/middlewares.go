@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	pb "jkfr/protobuf/demo"
-	"jkfr/protobuf/demo/hello-service/svc"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
+	"github.com/jkprj/jkfr/protobuf/demo/hello-service/svc"
 )
 
 // WrapEndpoints accepts the service's entire collection of endpoints, so that a

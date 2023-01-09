@@ -8,12 +8,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	jkregistry "jkfr/gokit/registry"
-	jktrans "jkfr/gokit/transport"
-	jkgrpc "jkfr/gokit/transport/grpc"
-	jklog "jkfr/log"
-	pb "jkfr/protobuf/demo"
-	hellogrpc "jkfr/protobuf/demo/hello-service/svc/client/grpc"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkgrpc "github.com/jkprj/jkfr/gokit/transport/grpc"
+	jklog "github.com/jkprj/jkfr/log"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
+	hellogrpc "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/client/grpc"
 
 	// kitgrpc "github.com/go-kit/kit/transport/grpc"
 	"github.com/hashicorp/consul/api"

@@ -8,15 +8,15 @@ import (
 	"sync"
 	"time"
 
-	jkregistry "jkfr/gokit/registry"
-	jktrans "jkfr/gokit/transport"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
 
-	kitlog "jkfr/gokit/log"
-	jkendpoint "jkfr/gokit/transport/endpoint"
-	jkpool "jkfr/gokit/transport/pool"
-	grpc_pools "jkfr/gokit/transport/pool/grpc"
-	jklb "jkfr/gokit/utils/lb"
-	jklog "jkfr/log"
+	kitlog "github.com/jkprj/jkfr/gokit/log"
+	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	grpc_pools "github.com/jkprj/jkfr/gokit/transport/pool/grpc"
+	jklb "github.com/jkprj/jkfr/gokit/utils/lb"
+	jklog "github.com/jkprj/jkfr/log"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/sd"

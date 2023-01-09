@@ -1,11 +1,12 @@
 package main
 
 import (
-	"jkfr/prometheus"
-	"jkfr/prometheus/counter"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/jkprj/jkfr/prometheus"
+	"github.com/jkprj/jkfr/prometheus/counter"
 )
 
 func TestGetCounter() {

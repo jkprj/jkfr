@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	jkpool "jkfr/gokit/transport/pool"
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
 )
 
 type GRPCPool struct {

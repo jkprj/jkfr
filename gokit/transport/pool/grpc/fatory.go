@@ -7,8 +7,8 @@ import (
 	"net"
 	"reflect"
 
-	jkpool "jkfr/gokit/transport/pool"
-	jklog "jkfr/log"
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	jklog "github.com/jkprj/jkfr/log"
 
 	"google.golang.org/grpc"
 )

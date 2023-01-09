@@ -1,7 +1,7 @@
 package log
 
 import (
-	kitlog "jkfr/gokit/log"
+	kitlog "github.com/jkprj/jkfr/gokit/log"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

@@ -4,10 +4,10 @@ import (
 	"sync"
 	"time"
 
-	jkregistry "jkfr/gokit/registry"
-	"jkfr/gokit/utils"
-	jklog "jkfr/log"
-	"jkfr/prometheus"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	"github.com/jkprj/jkfr/gokit/utils"
+	jklog "github.com/jkprj/jkfr/log"
+	"github.com/jkprj/jkfr/prometheus"
 )
 
 var promOnce sync.Once

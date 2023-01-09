@@ -16,7 +16,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	pb "jkfr/protobuf/demo"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
 )
 
 // Endpoints collects all of the endpoints that compose an add service. It's

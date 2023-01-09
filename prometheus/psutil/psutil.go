@@ -4,7 +4,7 @@ import (
 	"log"
 	"os"
 
-	"jkfr/prometheus/gauge"
+	"github.com/jkprj/jkfr/prometheus/gauge"
 
 	"github.com/shirou/gopsutil/process"
 )

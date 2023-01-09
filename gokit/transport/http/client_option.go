@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strings"
 
-	jkregistry "jkfr/gokit/registry"
-	jktrans "jkfr/gokit/transport"
-	jkendpoint "jkfr/gokit/transport/endpoint"
-	"jkfr/gokit/utils"
-	jkos "jkfr/os"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
+	"github.com/jkprj/jkfr/gokit/utils"
+	jkos "github.com/jkprj/jkfr/os"
 
 	kithttp "github.com/go-kit/kit/transport/http"
 	"golang.org/x/time/rate"

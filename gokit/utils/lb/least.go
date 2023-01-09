@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	urand "jkfr/gokit/utils/rand"
+	urand "github.com/jkprj/jkfr/gokit/utils/rand"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/sd"

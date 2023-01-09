@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/errors"
 
 	// This service
-	pb "jkfr/protobuf/demo"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
 )
 
 const contentType = "application/json; charset=utf-8"

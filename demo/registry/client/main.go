@@ -4,8 +4,8 @@ import (
 	"runtime"
 	"time"
 
-	jkregistry "jkfr/gokit/registry"
-	jklog "jkfr/log"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jklog "github.com/jkprj/jkfr/log"
 
 	"github.com/hashicorp/consul/api"
 )

@@ -8,10 +8,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	jkregistry "jkfr/gokit/registry"
-	jktrans "jkfr/gokit/transport"
-	jkrpc "jkfr/gokit/transport/rpc"
-	jklog "jkfr/log"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkrpc "github.com/jkprj/jkfr/gokit/transport/rpc"
+	jklog "github.com/jkprj/jkfr/log"
 	// "github.com/hashicorp/consul/api"
 )
 

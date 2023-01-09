@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	jktrans "jkfr/gokit/transport"
-	jkpool "jkfr/gokit/transport/pool"
-	"jkfr/gokit/utils"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	"github.com/jkprj/jkfr/gokit/utils"
 )
 
 var ErrTimeout error = errors.New("Timeout")

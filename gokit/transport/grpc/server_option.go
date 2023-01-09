@@ -8,12 +8,12 @@ import (
 
 	"google.golang.org/grpc"
 
-	jkregistry "jkfr/gokit/registry"
-	jktrans "jkfr/gokit/transport"
-	jkendpoint "jkfr/gokit/transport/endpoint"
-	"jkfr/gokit/utils"
-	jklog "jkfr/log"
-	jkos "jkfr/os"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
+	"github.com/jkprj/jkfr/gokit/utils"
+	jklog "github.com/jkprj/jkfr/log"
+	jkos "github.com/jkprj/jkfr/os"
 
 	"golang.org/x/time/rate"
 )

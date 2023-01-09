@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 
-	jklog "jkfr/log"
-	jkos "jkfr/os"
+	jklog "github.com/jkprj/jkfr/log"
+	jkos "github.com/jkprj/jkfr/os"
 
 	"github.com/BurntSushi/toml"
 )

@@ -3,8 +3,8 @@ package main
 import (
 	"time"
 
-	jkregistry "jkfr/gokit/registry"
-	jklog "jkfr/log"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 func main() {

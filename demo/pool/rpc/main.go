@@ -2,12 +2,13 @@ package main
 
 import (
 	"flag"
-	jkpool "jkfr/gokit/transport/pool"
-	rpcpool "jkfr/gokit/transport/pool/rpc"
-	"jkfr/log"
 	"runtime"
 	"sync/atomic"
 	"time"
+
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	rpcpool "github.com/jkprj/jkfr/gokit/transport/pool/rpc"
+	"github.com/jkprj/jkfr/log"
 )
 
 type URequest struct {

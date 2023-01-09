@@ -17,7 +17,7 @@ import (
 	grpctransport "github.com/go-kit/kit/transport/grpc"
 
 	// This Service
-	pb "jkfr/protobuf/demo"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
 )
 
 // MakeGRPCServer makes a set of endpoints available as a gRPC HelloServer.

@@ -5,9 +5,9 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	jkregistry "jkfr/gokit/registry"
-	jkendpoint "jkfr/gokit/transport/endpoint"
-	jklog "jkfr/log"
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 type EndpointsWrapInterface interface {

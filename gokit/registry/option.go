@@ -1,9 +1,9 @@
 package registry
 
 import (
-	"jkfr/gokit/utils"
-	jklog "jkfr/log"
-	jkos "jkfr/os"
+	"github.com/jkprj/jkfr/gokit/utils"
+	jklog "github.com/jkprj/jkfr/log"
+	jkos "github.com/jkprj/jkfr/os"
 
 	consulapi "github.com/hashicorp/consul/api"
 )

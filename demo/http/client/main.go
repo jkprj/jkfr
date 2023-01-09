@@ -6,10 +6,10 @@ import (
 	"runtime"
 	"time"
 
-	// jkregistry "jkfr/gokit/registry"
-	jktrans "jkfr/gokit/transport"
-	jkhttp "jkfr/gokit/transport/http"
-	jklog "jkfr/log"
+	// jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkhttp "github.com/jkprj/jkfr/gokit/transport/http"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 type res struct {

@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"jkfr/gokit/utils"
-	jklog "jkfr/log"
-	unet "jkfr/net"
+	"github.com/jkprj/jkfr/gokit/utils"
+	jklog "github.com/jkprj/jkfr/log"
+	unet "github.com/jkprj/jkfr/net"
 
 	"github.com/go-kit/kit/endpoint"
 	kitcosul "github.com/go-kit/kit/sd/consul"

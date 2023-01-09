@@ -3,10 +3,11 @@ package http
 import (
 	"context"
 
-	jkregistry "jkfr/gokit/registry"
-	jkendpoint "jkfr/gokit/transport/endpoint"
-	jklog "jkfr/log"
 	"net/http"
+
+	jkregistry "github.com/jkprj/jkfr/gokit/registry"
+	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
+	jklog "github.com/jkprj/jkfr/log"
 
 	"github.com/go-kit/kit/endpoint"
 )

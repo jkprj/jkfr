@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	jktrans "jkfr/gokit/transport"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
 )
 
 type PoolClient interface {

@@ -7,8 +7,8 @@ import (
 	"net/rpc/jsonrpc"
 	"time"
 
-	jkpool "jkfr/gokit/transport/pool"
-	"jkfr/gokit/utils"
+	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	"github.com/jkprj/jkfr/gokit/utils"
 )
 
 type jsonCodec struct {
