@@ -16,11 +16,11 @@ import (
 )
 
 type URequest struct {
-	Name string
+	Name string `json:"Name,omitempty"`
 }
 
 type URespone struct {
-	Msg string
+	Msg string `json:"Msg,omitempty"`
 }
 
 var th_count int = 64
@@ -44,7 +44,7 @@ func main() {
 	init_param()
 
 	// callDefault()
-	// callWithTCP()
+	// callWithTLSTCP()
 	// callWithHttp()
 	// callWithTLSHttp()
 	// callWithOption()
@@ -71,7 +71,7 @@ func callDefault() {
 }
 
 // TCP with TLS
-func callWithTCP() {
+func callWithTLSTCP() {
 	err := jkrpc.RegistryNewClient("test",
 		jkrpc.ClientPemFile("pem-file"),
 		jkrpc.ClientKeyFile("key-file"),
@@ -185,7 +185,7 @@ func pressureTest() {
 				err := jkrpc.Call("test", "HelloWord.Hello", &URequest{}, resp)
 				if nil != err {
 					jklog.Errorw("call rpc fail", "err", err)
-					return
+					break
 				}
 				atomic.AddUint64(&count, 1)
 				// jklog.Infow("", "resp", resp)

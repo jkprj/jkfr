@@ -50,6 +50,7 @@ type ClientConfig struct {
 	WriteTimeout        int        `json:"WriteTimeout" toml:"WriteTimeout"`
 	ClientPemFile       string     `json:"ClientPemFile" toml:"ClientPemFile"`
 	ClientKeyFile       string     `json:"ClientKeyFile" toml:"ClientKeyFile"`
+	Codec               string     `json:"Codec" toml:"Codec"`
 
 	tmpActionMiddlewares []jkendpoint.ActionMiddleware
 }
@@ -70,6 +71,7 @@ func defaultClientConfig(name string) *ClientConfig {
 	cfg.ConsulTags = jkos.GetEnvStrings("C_CONSUL_TAGS", ",", nil)
 	cfg.Strategy = jkos.GetEnvString("C_STRATEGY", jktrans.STRATEGY_LEAST)
 	cfg.PrometheusNameSpace = jkos.GetEnvString("C_PROMETHEUS_NAME_SPACE", name)
+	cfg.Codec = jkos.GetEnvString("C_CODEC", jktrans.CODEC_GOB)
 	cfg.Retry = jkos.GetEnvInt("C_RETRY", 3)
 	cfg.RetryIntervalMS = jkos.GetEnvInt("C_RETRY_INTERVAL_MS", 1000)
 	cfg.RateLimit = rate.Limit(jkos.GetEnvInt("C_RATE_LIMIT", 0))
@@ -138,6 +140,12 @@ func ClientLimit(limit rate.Limit) ClientOption {
 func ClientPrometheusNameSpace(prometheusnamespace string) ClientOption {
 	return func(cfg *ClientConfig) {
 		cfg.PrometheusNameSpace = prometheusnamespace
+	}
+}
+
+func ClientCodec(codec string) ClientOption {
+	return func(cfg *ClientConfig) {
+		cfg.Codec = codec
 	}
 }
 

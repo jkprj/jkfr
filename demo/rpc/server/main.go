@@ -14,8 +14,8 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	jklog.InitLogger()
 
-	// runDefaultServer()
-	runTCPServer()
+	runDefaultServer()
+	// runTCPWithTLSServer()
 	// runHttpServer()
 	// runTLSHttpServer()
 	// runServerWithOption()
@@ -34,7 +34,7 @@ func runDefaultServer() {
 }
 
 // TCP with TLS
-func runTCPServer() {
+func runTCPWithTLSServer() {
 	jkrpc.RunTLSServer("test",
 		endpoints.NewService(),
 		jkrpc.ServerKeyFile("key-file"),

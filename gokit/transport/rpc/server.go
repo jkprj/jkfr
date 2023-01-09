@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"errors"
-	"net/rpc"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -82,7 +81,7 @@ func runServer(name string, service interface{}, ops ...ServerOption) error {
 	}
 	defer registry.Deregister()
 
-	server := rpc.NewServer()
+	server := NewServer(cfg.Codec)
 	if "" == cfg.RpcName {
 		err = server.Register(service)
 	} else {

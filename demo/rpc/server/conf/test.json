@@ -2,7 +2,8 @@
 	"Server":{
 		"ServerAddr":"127.0.0.1:6666",
 		"#RateLimit": 10.0,
-		"RpcName": "HelloWord"
+		"RpcName": "HelloWord",
+		"#Codec": "json"
 	},
 	"Registry":{
 		"ConsulAddr": "127.0.0.1:8500",

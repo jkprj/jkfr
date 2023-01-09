@@ -8,13 +8,12 @@ import (
 	"net/rpc"
 	"time"
 
+	jkpool "jkfr/gokit/transport/pool"
 	"jkfr/gokit/utils"
 )
 
-type funcCodec func(e interface{}) error
-
-//Codec ...
-type Codec struct {
+//codec ...
+type codec struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 	Closer       io.ReadWriteCloser
@@ -23,26 +22,67 @@ type Codec struct {
 	EncBuf       *bufio.Writer
 }
 
+func NewClientCodec(conn io.ReadWriteCloser, o *jkpool.Options) rpc.ClientCodec {
+
+	encBuf := bufio.NewWriter(conn)
+
+	c := &codec{
+		Closer:       conn,
+		Decoder:      gob.NewDecoder(conn),
+		Encoder:      gob.NewEncoder(encBuf),
+		EncBuf:       encBuf,
+		ReadTimeout:  o.ReadTimeout,
+		WriteTimeout: o.WriteTimeout,
+	}
+
+	return c
+
+}
+
 //WriteRequest ...
-func (c *Codec) WriteRequest(r *rpc.Request, body interface{}) (err error) {
-	if err = c.timeoutCoder(c.Encoder.Encode, r, c.WriteTimeout, "write request"); err != nil {
-		return
+func (c *codec) WriteRequest(r *rpc.Request, body interface{}) (err error) {
+
+	timeout := c.WriteTimeout
+	if c.WriteTimeout <= 0 {
+		timeout = time.Second * 60
 	}
 
-	if err = c.timeoutCoder(c.Encoder.Encode, body, c.WriteTimeout, "write request body"); err != nil {
-		return
+	echan := make(chan error, 1)
+	go func() {
+		echan <- c.writeRequest(r, body)
+	}()
+
+	timeoutTimer := time.NewTimer(timeout)
+
+	select {
+	case err = <-echan:
+	case <-timeoutTimer.C:
+		err = fmt.Errorf("WriteTimeout, method:%s", r.ServiceMethod)
 	}
 
+	timeoutTimer.Stop()
+
+	return err
+}
+
+func (c *codec) writeRequest(r *rpc.Request, body interface{}) (err error) {
+
+	if err = c.Encoder.Encode(r); err != nil {
+		return
+	}
+	if err = c.Encoder.Encode(body); err != nil {
+		return
+	}
 	return c.EncBuf.Flush()
 }
 
 //ReadResponseHeader ...
-func (c *Codec) ReadResponseHeader(r *rpc.Response) (err error) {
+func (c *codec) ReadResponseHeader(r *rpc.Response) (err error) {
 	return c.Decoder.Decode(r)
 }
 
 //ReadResponseBody ...
-func (c *Codec) ReadResponseBody(body interface{}) (err error) {
+func (c *codec) ReadResponseBody(body interface{}) (err error) {
 
 	utils.ZeroStruct(body)
 
@@ -50,27 +90,6 @@ func (c *Codec) ReadResponseBody(body interface{}) (err error) {
 }
 
 //Close ...
-func (c *Codec) Close() error {
+func (c *codec) Close() error {
 	return c.Closer.Close()
-}
-
-func (c *Codec) timeoutCoder(fcodec funcCodec, req interface{}, timeout time.Duration, msg string) (err error) {
-	if timeout <= 0 {
-		timeout = time.Second * 60
-	}
-
-	echan := make(chan error, 1)
-	go func() { echan <- fcodec(req) }()
-
-	timeoutTimer := time.NewTimer(timeout)
-
-	select {
-	case err = <-echan:
-	case <-timeoutTimer.C:
-		err = fmt.Errorf("Timeout %s", msg)
-	}
-
-	timeoutTimer.Stop()
-
-	return err
 }

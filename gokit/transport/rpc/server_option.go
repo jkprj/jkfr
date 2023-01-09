@@ -26,6 +26,7 @@ type ServerConfig struct {
 	RpcPath             string     `json:"RpcPath" toml:"RpcPath"`
 	RpcDebugPath        string     `json:"RpcDebugPath" toml:"RpcDebugPath"`
 	RpcName             string     `json:"RpcName" toml:"RpcName"`
+	Codec               string     `json:"Codec" toml:"Codec"`
 
 	ServerPem []byte `json:"-" toml:"-"`
 	ServerKey []byte `json:"-" toml:"-"`
@@ -56,6 +57,7 @@ func defaultServerConfig(name string) *ServerConfig {
 	cfg.PrometheusNameSpace = jkos.GetEnvString("S_PROMETHEUS_NAME_SPACE", name)
 	cfg.RpcPath = jkos.GetEnvString("S_RPC_PATH", rpc.DefaultRPCPath)
 	cfg.RpcName = jkos.GetEnvString("S_RPC_NAME", "")
+	cfg.Codec = jkos.GetEnvString("S_CODEC", jktrans.CODEC_GOB)
 	cfg.RpcDebugPath = jkos.GetEnvString("S_RPC_DEBUG_PATH", rpc.DefaultDebugPath)
 	cfg.RateLimit = rate.Limit(jkos.GetEnvInt("S_RATE_LIMIT", 0))
 
@@ -233,6 +235,12 @@ func ServerRpcDebugPath(rpcDebugPath string) ServerOption {
 func ServerRpcName(rpcName string) ServerOption {
 	return func(cfg *ServerConfig) {
 		cfg.RpcName = rpcName
+	}
+}
+
+func ServerCodec(codec string) ServerOption {
+	return func(cfg *ServerConfig) {
+		cfg.Codec = codec
 	}
 }
 

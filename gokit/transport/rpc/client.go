@@ -188,6 +188,7 @@ func (client *RPCClient) init_pool() {
 	op.ReadTimeout = time.Duration(client.cfg.ReadTimeout) * time.Second
 	op.WriteTimeout = time.Duration(client.cfg.WriteTimeout) * time.Second
 	op.Factory = client.cfg.Fatory(client.cfg)
+	op.Codec = client.cfg.Codec
 
 	client.rpcPool, _ = rpcpool.NewRpcPools(nil, op)
 	client.rpcPool.SetIdleTimeOut(uint(client.cfg.IdleTimeout))

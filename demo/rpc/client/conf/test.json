@@ -6,13 +6,14 @@
         "Retry": 3,
         "TimeOut": 30,
         "CallTimeOut": 30,
-        "PoolCap": 2,
-        "MaxCap": 2,
+        "PoolCap": 1,
+        "MaxCap": 1,
         "IdleTimeout": 600,
-        "KeepAlive": true
+        "KeepAlive": true,
+		"#Codec": "json"
     },
     "Registry": {
-        "#ConsulAddr": "127.0.0.1:8500",
-        "ConsulAddr": "192.168.137.90:8500"
+        "ConsulAddr": "127.0.0.1:8500",
+        "#ConsulAddr": "192.168.137.90:8500"
     }
 }

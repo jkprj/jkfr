@@ -11,14 +11,14 @@ import (
 )
 
 type URequest struct {
-	Name  string
-	Pause int
+	Name  string `json:"Name,omitempty"`
+	Pause int    `json:"Pause,omitempty"`
 }
 
 type URespone struct {
-	Msg   string
-	Name  string
-	Pause int
+	Msg   string `json:"Msg,omitempty"`
+	Name  string `json:"Name,omitempty"`
+	Pause int    `json:"Pause,omitempty"`
 }
 
 var th_count int = 64

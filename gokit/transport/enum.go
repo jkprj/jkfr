@@ -15,3 +15,8 @@ const (
 	ROLE_CLIENT = "client"
 	ROLE_SERVER = "server"
 )
+
+const (
+	CODEC_GOB  = "gob"
+	CODEC_JSON = "json"
+)

@@ -1,11 +1,11 @@
 package hello
 
 type URequest struct {
-	Name string
+	Name string `json:"Name,omitempty"`
 }
 
 type URespone struct {
-	Msg string
+	Msg string `json:"Msg,omitempty"`
 }
 
 type HelloRpc struct {
@@ -17,6 +17,7 @@ func NewHelloRpc() *HelloRpc {
 
 func (h *HelloRpc) Hello(request URequest, response *URespone) error {
 	*response = URespone{Msg: "hello baby, My name is jk"}
+	// time.Sleep(time.Second * 20)
 	return nil
 }
 

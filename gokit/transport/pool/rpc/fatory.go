@@ -2,13 +2,13 @@ package rpc
 
 import (
 	"bufio"
-	"encoding/gob"
 	"errors"
 	"io"
 	"net"
 	"net/http"
 	"net/rpc"
 
+	jktrans "jkfr/gokit/transport"
 	jkpool "jkfr/gokit/transport/pool"
 	jktls "jkfr/gokit/utils/tls"
 	jklog "jkfr/log"
@@ -34,16 +34,13 @@ func DefaultRpcTLSHttpFatory(clientpem, clientkey []byte, path string) jkpool.Cl
 	return RpcTLSHttpFatory(DefaultNewRpcClient, clientpem, clientkey, path)
 }
 
-func DefaultNewRpcClient(conn net.Conn, o *jkpool.Options) (jkpool.PoolClient, error) {
-	encBuf := bufio.NewWriter(conn)
-	p := rpc.NewClientWithCodec(&Codec{
-		Closer:       conn,
-		Decoder:      gob.NewDecoder(conn),
-		Encoder:      gob.NewEncoder(encBuf),
-		EncBuf:       encBuf,
-		ReadTimeout:  o.ReadTimeout,
-		WriteTimeout: o.WriteTimeout,
-	})
+func DefaultNewRpcClient(conn net.Conn, o *jkpool.Options) (p jkpool.PoolClient, err error) {
+
+	if jktrans.CODEC_JSON == o.Codec {
+		p = rpc.NewClientWithCodec(NewJsonCodec(conn, o))
+	} else {
+		p = rpc.NewClientWithCodec(NewClientCodec(conn, o))
+	}
 
 	return p, nil
 }
