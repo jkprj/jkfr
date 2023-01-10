@@ -80,7 +80,7 @@ func RegistryClient(client *GRPCClient) {
 	name2client[client.name] = client
 }
 
-func RegistryNewClient(name string, newClientHandle grpc_pools.NewClientHandle, ops ...ClientOption) error {
+func RegistryNewClient(name string, clientFatory grpc_pools.ClientFatory, ops ...ClientOption) error {
 
 	if nil != GetClient(name) {
 		return nil
@@ -93,7 +93,7 @@ func RegistryNewClient(name string, newClientHandle grpc_pools.NewClientHandle, 
 		return nil
 	}
 
-	client, err := NewClient(name, newClientHandle, ops...)
+	client, err := NewClient(name, clientFatory, ops...)
 	if nil != err {
 		return err
 	}
@@ -123,8 +123,8 @@ type reuquestParam struct {
 type GRPCClient struct {
 	Done chan *UCall
 
-	name      string
-	newClient grpc_pools.NewClientHandle
+	name         string
+	clientFatory grpc_pools.ClientFatory
 
 	cfg          *ClientConfig
 	consulClient kitconsul.Client
@@ -141,10 +141,10 @@ type GRPCClient struct {
 	isClose bool
 }
 
-func NewClient(name string, newClientHandle grpc_pools.NewClientHandle, ops ...ClientOption) (client *GRPCClient, err error) {
+func NewClient(name string, clientFatory grpc_pools.ClientFatory, ops ...ClientOption) (client *GRPCClient, err error) {
 	client = new(GRPCClient)
 	client.name = name
-	client.newClient = newClientHandle
+	client.clientFatory = clientFatory
 	client.actionEndPoint = map[string]endpoint.Endpoint{}
 
 	client.cfg = newClientConfig(name, ops...)
@@ -167,7 +167,7 @@ func (client *GRPCClient) init_grpc_pools() {
 	opt := jkpool.NewOptions()
 	opt.InitCap = client.cfg.PoolCap
 	opt.MaxCap = client.cfg.MaxCap
-	opt.Factory = grpc_pools.GRPCClientFactory(client.newClient, client.cfg.GRPCDialOps...)
+	opt.Factory = grpc_pools.GRPCClientFactory(client.clientFatory, client.cfg.GRPCDialOps...)
 
 	client.pools, _ = grpc_pools.NewGRPCPools(nil, opt)
 

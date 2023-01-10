@@ -1,14 +1,14 @@
 # jkfr
 
-jkfr 是一款轻量级的微服务开发框架，用于解决微服务架构下的服务治理与通信问题。使用 jkfr 开发的微服务原生具备相互之间的远程服务发现与通信能力， 利用 jkfr 提供的丰富服务治理特性，可以实现诸如服务发现、负载均衡、流量调度、失败重传，断线重连、服务监控等服务治理诉求。
+jkfr 是一款轻量级的微服务开发框架，用于解决微服务架构下的服务治理与通信问题，因为微服务让业务开发演进更灵活、快捷的同时，也带来了一些它独有的特征和需求：如微服务之后组件数量越来越多，如何解决各个组件的稳定性，如何快速的水平扩容，如何快速的变更迁移等。使用 jkfr 开发的微服务原生具备相互之间的远程服务发现与通信能力， 利用 jkfr 提供的丰富服务治理特性，可以实现诸如**服务发现、负载均衡、流量调度、失败重传，断线重连、服务监控**等服务治理诉求。jkfr 的服务发现机制，让微服务组件之间可以独立演进并任意部署，请求端可以在**无需感知服务端部署位置与 IP 地址的情况下完成通信**。
 
 **jkfr功能特性：**
 
 - 易用性高
 - 高性能
 - 配置灵活
+- 自动权重
 - 服务发现
-- 服务监控
 - 失败重传
 - 断线自动重连
 
@@ -19,6 +19,27 @@ jkfr 是一款轻量级的微服务开发框架，用于解决微服务架构下
 ## JK-RPC-CLIENT
 
 ```go
+package main
+
+import (
+	jkrpc "github.com/jkprj/jkfr/gokit/transport/rpc"
+	jklog "github.com/jkprj/jkfr/log"
+)
+
+type URequest struct {
+	Name string `json:"Name,omitempty"`
+}
+
+type URespone struct {
+	Msg string `json:"Msg,omitempty"`
+}
+
+func main() {
+	resp := new(URespone)
+    // defaut: consuladdr=127.0.0.1:8500
+	err := jkrpc.Call("test", "Hello.HowAreYou", &URequest{}, resp)
+	jklog.Infow("call respone", "resp:", resp, "err", err)
+}
 
 ```
 
@@ -26,9 +47,112 @@ jkfr 是一款轻量级的微服务开发框架，用于解决微服务架构下
 
 ## JK-RPC-POOL
 
+```go
+package main
+
+import (
+	rpcpool "github.com/jkprj/jkfr/gokit/transport/pool/rpc"
+	jklog "github.com/jkprj/jkfr/log"
+)
+
+type URequest struct {
+	Name  string `json:"Name,omitempty"`
+}
+
+type URespone struct {
+	Msg   string `json:"Msg,omitempty"`
+}
+
+func main() {
+	pls, err := rpcpool.NewDefaultRpcPoolsWithAddr([]string{"127.0.0.1:6666", "127.0.0.1:6667"})
+	if nil != err {
+		jklog.Errorw("NewDefaultRpcPoolsWithAddr fail", "error", err)
+		return
+	}
+    
+    resp := URespone{}
+    err := pls.Call("Hello.Hello", &URequest{}, &resp)
+    jklog.Infow("call respone", "resp:", resp, "err", err)
+    
+    pls.Close()
+}
+
+```
+
+
+
 ## JK-GRPC-CLIENT
 
+```go
+package main
+
+import (
+	jkgrpc "github.com/jkprj/jkfr/gokit/transport/grpc"
+	jklog "github.com/jkprj/jkfr/log"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
+	hellogrpc "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/client/grpc"
+    
+	"google.golang.org/grpc"
+)
+
+func client_fatory(conn *grpc.ClientConn) (server interface{}, err error) {
+    pbsvr, err := hellogrpc.New(conn) // protoc生成的go new代码
+	return pbsvr, err
+}
+
+func main() {
+	err := jkgrpc.RegistryClientFatory("test", client_fatory)
+	if nil != err {
+		jklog.Errorw("RegistryClientFatory fail", "err", err)
+		return
+	}
+
+	resp, err := jkgrpc.Call("test", "GetPersons", &pb.PersonRequest{})
+	jklog.Infow("call respone", "resp:", resp, "err", err)
+}
+```
+
+
+
 ## JK-GRPC-POOL
+
+```go
+package main
+
+import (
+	grpc_pools "github.com/jkprj/jkfr/gokit/transport/pool/grpc"
+	jklog "github.com/jkprj/jkfr/log"
+	pb "github.com/jkprj/jkfr/protobuf/demo"
+	hellogrpc "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/client/grpc"
+
+	"google.golang.org/grpc"
+)
+
+func client_fatory(conn *grpc.ClientConn) (server interface{}, err error) {
+	pbsvr, err := hellogrpc.New(conn) // protoc生成的go new代码
+	return pbsvr, err
+}
+
+func main() {
+	grpcPools, err := grpc_pools.NewDefaultGRPCPoolsWithAddr(
+		[]string{
+			"127.0.0.1:6666",
+			"127.0.0.1:6667",
+		},
+		client_fatory,
+	)
+	if nil != err {
+		jklog.Errorw("NewDefaultGRPCPoolsWithAddr error", "error", err)
+		return
+	}
+
+	req := &pb.HelloRequest{}
+	resp, err := grpcPools.Call("SayHello", req)
+	jklog.Infow("call respone", "resp:", resp, "err", err)
+}
+```
+
+
 
 # 性能测试
 

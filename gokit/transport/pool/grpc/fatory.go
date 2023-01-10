@@ -60,7 +60,7 @@ func (client *ClientHandle) call(ctx context.Context, action string, request int
 	return nil, errors.New("client not found action")
 }
 
-type NewClientHandle func(conn *grpc.ClientConn) (server interface{}, err error)
+type ClientFatory func(conn *grpc.ClientConn) (server interface{}, err error)
 
 func GRPCConn(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) {
 	if target == "" {
@@ -75,7 +75,7 @@ func GRPCConn(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) 
 	return conn, nil
 }
 
-func GRPCClientFactory(newClient NewClientHandle, opts ...grpc.DialOption) jkpool.ClientFatory {
+func GRPCClientFactory(clientFatory ClientFatory, opts ...grpc.DialOption) jkpool.ClientFatory {
 
 	return func(o *jkpool.Options) (jkpool.PoolClient, net.Conn, error) {
 		conn, err := GRPCConn(o.ServerAddr, opts...)
@@ -84,7 +84,7 @@ func GRPCClientFactory(newClient NewClientHandle, opts ...grpc.DialOption) jkpoo
 			return nil, nil, err
 		}
 
-		cli, err := newClient(conn)
+		cli, err := clientFatory(conn)
 		if nil != err {
 			return nil, nil, err
 		}

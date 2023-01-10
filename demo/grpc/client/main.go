@@ -26,10 +26,8 @@ var ss_count int = 8
 var server_type = ""
 var server = "127.0.0.1:9090"
 
-var pbsvr pb.HelloServer = nil
-
-func newClient(conn *grpc.ClientConn) (server interface{}, err error) {
-	pbsvr, err = hellogrpc.New(conn)
+func clientFatory(conn *grpc.ClientConn) (server interface{}, err error) {
+	pbsvr, err := hellogrpc.New(conn)
 	return pbsvr, err
 }
 
@@ -67,7 +65,7 @@ func main() {
 }
 
 func runDefaultClient() {
-	err := jkgrpc.RegistryNewClient("test", newClient)
+	err := jkgrpc.RegistryNewClient("test", clientFatory)
 	if nil != err {
 		jklog.Errorw("RegistryNewClient fail", "err", err)
 		return
@@ -78,7 +76,7 @@ func runDefaultClient() {
 }
 
 func runDefaultWithClientHandle() {
-	client, err := jkgrpc.NewClient("test", newClient)
+	client, err := jkgrpc.NewClient("test", clientFatory)
 	if nil != err {
 		jklog.Errorw("NewClient fail", "err", err)
 		return
@@ -95,7 +93,7 @@ func runClientWithOption() {
 	compress, _ := grpc.NewGZIPCompressorWithLevel(gzip.BestCompression)
 
 	client, err := jkgrpc.NewClient("test",
-		newClient,
+		clientFatory,
 		jkgrpc.ClientStrategy(jktrans.STRATEGY_RANDOM),
 		jkgrpc.ClientLimit(2),
 		jkgrpc.ClientConsulTags("jinkun"),
@@ -136,7 +134,7 @@ func runClientWithOption() {
 }
 
 func runClientAsync() {
-	client, err := jkgrpc.NewClient("test", newClient)
+	client, err := jkgrpc.NewClient("test", clientFatory)
 	if nil != err {
 		jklog.Errorw("NewClient fail", "err", err)
 		return
@@ -146,7 +144,7 @@ func runClientAsync() {
 
 	// or
 	// chCall := make(chan *jkgrpc.UCall, 1000)
-	// client, err := jkgrpc.NewClient("test", newClient, jkgrpc.ClientAsyncCallChan(chCall))
+	// client, err := jkgrpc.NewClient("test", clientFatory, jkgrpc.ClientAsyncCallChan(chCall))
 	// if nil != err {
 	// 	jklog.Errorw( "NewClient fail", "err", err)
 	// 	return
@@ -168,9 +166,9 @@ func runClientAsync() {
 }
 
 func runClientWithDefaultConfigureFile() {
-	client, err := jkgrpc.NewClient("testT", newClient)
+	client, err := jkgrpc.NewClient("testT", clientFatory)
 	// or
-	// client, err := jkgrpc.NewClient("testJ", newClient)
+	// client, err := jkgrpc.NewClient("testJ", clientFatory)
 	if nil != err {
 		jklog.Errorw("NewClient fail", "err", err)
 		return
@@ -183,9 +181,9 @@ func runClientWithDefaultConfigureFile() {
 }
 
 func runClientWithConfigureFileOption() {
-	client, err := jkgrpc.NewClient("test", newClient, jkgrpc.ClientConfigFile("conf/test.toml"))
+	client, err := jkgrpc.NewClient("test", clientFatory, jkgrpc.ClientConfigFile("conf/test.toml"))
 	// or
-	// client, err := jkgrpc.NewClient("test", newClient, jkgrpc.ClientConfigFile("conf/test.json"))
+	// client, err := jkgrpc.NewClient("test", clientFatory, jkgrpc.ClientConfigFile("conf/test.json"))
 	if nil != err {
 		jklog.Errorw("NewClient fail", "err", err)
 		return
@@ -199,7 +197,7 @@ func runClientWithConfigureFileOption() {
 
 func pressureTest() {
 
-	client, err := jkgrpc.NewClient("test", newClient)
+	client, err := jkgrpc.NewClient("test", clientFatory)
 	if nil != err {
 		jklog.Errorw("NewClient fail", "err", err)
 		return

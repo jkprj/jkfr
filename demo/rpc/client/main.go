@@ -43,7 +43,7 @@ func main() {
 	jklog.InitLogger()
 	init_param()
 
-	// callDefault()
+	// callWithDefault()
 	// callWithTLSTCP()
 	// callWithHttp()
 	// callWithTLSHttp()
@@ -61,7 +61,7 @@ func main() {
 }
 
 // default : TCP no TLS
-func callDefault() {
+func callWithDefault() {
 	resp := new(URespone)
 	for i := 0; i < 10; i++ {
 		err := jkrpc.Call("test", "Hello.HowAreYou", &URequest{}, resp)

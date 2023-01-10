@@ -61,15 +61,15 @@ type GRPCPools struct {
 	isClosed bool
 }
 
-func NewDefaultGRPCPools(newClient NewClientHandle) *GRPCPools {
-	pls, _ := NewDefaultGRPCPoolsWithAddr([]string{}, newClient)
+func NewDefaultGRPCPools(clientFatory ClientFatory) *GRPCPools {
+	pls, _ := NewDefaultGRPCPoolsWithAddr([]string{}, clientFatory)
 	return pls
 }
 
-func NewDefaultGRPCPoolsWithAddr(addrs []string, newClient NewClientHandle) (*GRPCPools, error) {
+func NewDefaultGRPCPoolsWithAddr(addrs []string, clientFatory ClientFatory) (*GRPCPools, error) {
 
 	opt := jkpool.NewOptions()
-	opt.Factory = GRPCClientFactory(newClient, grpc.WithInsecure())
+	opt.Factory = GRPCClientFactory(clientFatory, grpc.WithInsecure())
 
 	return NewGRPCPools(addrs, opt)
 }
