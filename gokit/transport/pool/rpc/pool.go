@@ -83,9 +83,9 @@ func (rp *RpcPool) call(ctx context.Context, serviceMethod string, args interfac
 	if nil != err {
 		_, ok := err.(rpc.ServerError)
 		if !ok {
-			rp.pool.Put(client, jkpool.BAD)
+			rp.Put(client, jkpool.BAD)
 		} else {
-			rp.Put(client, jkpool.GOOD) // 服务端返回的错误不需要尝试释放连接
+			rp.Put(client, jkpool.GOOD) // 服务端返回的错误说明连接还是正常的，不需要尝试释放连接
 			log.Infow("ServerError", "err", err)
 		}
 

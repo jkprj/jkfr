@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/rpc"
 
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	// jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
 	jktls "github.com/jkprj/jkfr/gokit/utils/tls"
 	jklog "github.com/jkprj/jkfr/log"
@@ -36,13 +36,15 @@ func DefaultRpcTLSHttpFatory(clientpem, clientkey []byte, path string) jkpool.Cl
 
 func DefaultNewRpcClient(conn net.Conn, o *jkpool.Options) (p jkpool.PoolClient, err error) {
 
-	if jktrans.CODEC_JSON == o.Codec {
-		p = rpc.NewClientWithCodec(NewJsonCodec(conn, o))
-	} else {
-		p = rpc.NewClientWithCodec(NewClientCodec(conn, o))
-	}
+	// if jktrans.CODEC_JSON == o.Codec {
+	// 	p = rpc.NewClientWithCodec(NewJsonCodec(conn, o))
+	// } else {
+	// 	p = rpc.NewClientWithCodec(NewClientCodec(conn, o))
+	// }
 
-	return p, nil
+	// return p, nil
+
+	return rpc.NewClientWithCodec(NewTimeoutCodecEx(conn, o)), nil
 }
 
 func TcpConn(o *jkpool.Options) (net.Conn, error) {

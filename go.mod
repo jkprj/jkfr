@@ -17,6 +17,7 @@ require (
 	github.com/tklauser/go-sysconf v0.3.5 // indirect
 	go.uber.org/zap v1.16.0
 	golang.org/x/time v0.0.0-20210220033141-f8bda1e9f3ba
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013
 	google.golang.org/grpc v1.36.1
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )

@@ -3,7 +3,6 @@ package rpc
 import (
 	"bufio"
 	"encoding/gob"
-	"fmt"
 	"io"
 	"net/rpc"
 	"time"
@@ -42,27 +41,27 @@ func NewClientCodec(conn io.ReadWriteCloser, o *jkpool.Options) rpc.ClientCodec 
 //WriteRequest ...
 func (c *codec) WriteRequest(r *rpc.Request, body interface{}) (err error) {
 
-	timeout := c.WriteTimeout
-	if c.WriteTimeout <= 0 {
-		timeout = time.Second * 60
-	}
+	// timeout := c.WriteTimeout
+	// if c.WriteTimeout <= 0 {
+	// 	timeout = time.Second * 60
+	// }
 
-	echan := make(chan error, 1)
-	go func() {
-		echan <- c.writeRequest(r, body)
-	}()
+	// echan := make(chan error, 1)
+	// go func() {
+	// 	echan <- c.writeRequest(r, body)
+	// }()
 
-	timeoutTimer := time.NewTimer(timeout)
+	// timeoutTimer := time.NewTimer(timeout)
 
-	select {
-	case err = <-echan:
-	case <-timeoutTimer.C:
-		err = fmt.Errorf("WriteTimeout, method:%s", r.ServiceMethod)
-	}
+	// select {
+	// case err = <-echan:
+	// case <-timeoutTimer.C:
+	// 	err = fmt.Errorf("WriteTimeout, method:%s", r.ServiceMethod)
+	// }
 
-	timeoutTimer.Stop()
+	// timeoutTimer.Stop()
 
-	return err
+	return c.writeRequest(r, body)
 }
 
 func (c *codec) writeRequest(r *rpc.Request, body interface{}) (err error) {

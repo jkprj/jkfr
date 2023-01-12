@@ -31,27 +31,29 @@ func NewJsonCodec(conn io.ReadWriteCloser, o *jkpool.Options) rpc.ClientCodec {
 
 func (jc *jsonCodec) WriteRequest(r *rpc.Request, body interface{}) (err error) {
 
-	timeout := jc.WriteTimeout
-	if jc.WriteTimeout <= 0 {
-		timeout = time.Second * 60
-	}
+	// timeout := jc.WriteTimeout
+	// if jc.WriteTimeout <= 0 {
+	// 	timeout = time.Second * 60
+	// }
 
-	echan := make(chan error, 1)
-	go func() {
-		echan <- jc.codec.WriteRequest(r, body)
-	}()
+	// echan := make(chan error, 1)
+	// go func() {
+	// 	echan <- jc.codec.WriteRequest(r, body)
+	// }()
 
-	timeoutTimer := time.NewTimer(timeout)
+	// timeoutTimer := time.NewTimer(timeout)
 
-	select {
-	case err = <-echan:
-	case <-timeoutTimer.C:
-		err = fmt.Errorf("Timeout method:%s", r.ServiceMethod)
-	}
+	// select {
+	// case err = <-echan:
+	// case <-timeoutTimer.C:
+	// 	err = fmt.Errorf("Timeout method:%s", r.ServiceMethod)
+	// }
 
-	timeoutTimer.Stop()
+	// timeoutTimer.Stop()
 
-	return err
+	// return err
+
+	return jc.codec.WriteRequest(r, body)
 }
 
 func (jc *jsonCodec) ReadResponseHeader(r *rpc.Response) (err error) {
