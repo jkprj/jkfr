@@ -34,36 +34,13 @@ func GetFreePort() (port int) {
 // 解析服务地址
 func ParseHostAddr(addr string) (hostIP string, port int, err error) {
 
-	// if "" == addr {
-	// 	return "", 0, errors.New("Server addr must not be empty")
-	// }
-
-	spAddr := strings.Split(addr, ":")
-
-	if 1 > len(spAddr) {
-		return "", 0, errors.New("Server addr invalid, addr:" + addr)
+	strPort := ""
+	hostIP, strPort, err = net.SplitHostPort(addr)
+	if nil != err {
+		return "", 0, err
 	}
 
-	hostIP = spAddr[0]
-	// if "" != hostIP {
-	// 	ip := net.ParseIP(hostIP)
-	// 	if nil == ip {
-	// 		jklog.Errorw("Server addr's IP invalid", "addr", addr, "hostIP", hostIP, "port", port, "err", err)
-	// 		return "", 0, errors.New("Server addr's IP invalid, addr:" + addr)
-	// 	}
-	// }
-
-	if 1 == len(spAddr) {
-		return hostIP, 0, nil
-	}
-
-	port, err = strconv.Atoi(spAddr[1])
-	if nil != err || port < 0 || port >= int(math.Pow(2, 16)) {
-		jklog.Errorw("Server addr's port invalid", "addr", addr, "hostIP", hostIP, "port", port, "err", err)
-		return "", 0, errors.New("Server addr's port invalid, addr:" + addr)
-	}
-
-	return hostIP, port, nil
+	return hostIP, strconv.Atoi(strPort), nil
 }
 
 func GetRandomHostAddr(addr string) (string, int, error) {
