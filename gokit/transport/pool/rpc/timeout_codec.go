@@ -63,14 +63,11 @@ func NewTimeoutCodecEx(conn net.Conn, o *jkpool.Options) rpc.ClientCodec {
 
 func (tc *timeoutCodec) WriteRequest(r *rpc.Request, body interface{}) (err error) {
 
-	if nil == err {
-		tc.pushReq(r)
-	}
+	tc.pushReq(r)
 
 	tc.conn.SetWriteDeadline(time.Now().Add(tc.writeTimeout))
 
 	err = tc.codec.WriteRequest(r, body)
-
 	if nil != err {
 		tc.removeReq(r.Seq)
 	}
