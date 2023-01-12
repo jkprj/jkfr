@@ -236,7 +236,7 @@ func testRPC() {
 			client := clients[i%ss_count]
 
 			for {
-				err := client.Call("HelloWord.Hello", &URequest{}, resp)
+				err := client.Call("Hello.Hello", &URequest{}, resp)
 				if nil != err {
 					jklog.Errorw("call rpc fail", "err", err)
 					return

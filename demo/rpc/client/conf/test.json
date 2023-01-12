@@ -7,7 +7,7 @@
         "TimeOut": 30,
         "CallTimeOut": 30,
         "PoolCap": 1,
-        "MaxCap": 1,
+        "MaxCap": 16,
         "IdleTimeout": 600,
         "KeepAlive": true,
 		"#Codec": "json"

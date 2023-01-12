@@ -73,7 +73,7 @@ func (rp *RpcPool) call(ctx context.Context, serviceMethod string, args interfac
 	case <-rpcCall.Done:
 		err = rpcCall.Error
 	case <-timeoutCtx.Done():
-		err = errors.New("ReadTimeout addr:%s" + rp.addr + ", method:%s" + serviceMethod)
+		err = errors.New("ReadTimeout addr:" + rp.addr + ", method:" + serviceMethod)
 	}
 
 	if nil != cancel {
