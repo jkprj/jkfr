@@ -1,15 +1,10 @@
 package os
 
 import (
-	"errors"
-	"math"
 	"math/rand"
 	"net"
 	"strconv"
-	"strings"
 	"time"
-
-	jklog "github.com/jkprj/jkfr/log"
 )
 
 func GetFreePort() (port int) {
@@ -40,7 +35,12 @@ func ParseHostAddr(addr string) (hostIP string, port int, err error) {
 		return "", 0, err
 	}
 
-	return hostIP, strconv.Atoi(strPort), nil
+	port, err = strconv.Atoi(strPort)
+	if nil != err {
+		return "", 0, err
+	}
+
+	return hostIP, port, nil
 }
 
 func GetRandomHostAddr(addr string) (string, int, error) {

@@ -1,7 +1,6 @@
 package rpc
 
 import (
-	"fmt"
 	"io"
 	"net/rpc"
 	"net/rpc/jsonrpc"

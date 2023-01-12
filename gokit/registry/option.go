@@ -23,9 +23,9 @@ type registry struct {
 }
 
 type RegConfig struct {
-	ServerName string // 服务名称
-	SvcHost    string // 服务绑定ip
-	SvcPort    int    // 服务绑定端口
+	ServerName string `json:"-" toml:"-"` // 服务名称
+	SvcHost    string `json:"-" toml:"-"` // 服务绑定ip
+	SvcPort    int    `json:"-" toml:"-"` // 服务绑定端口
 
 	ServerAddr string `json:"ServerAddr" toml:"ServerAddr"` // 服务地址
 	ConsulAddr string `json:"ConsulAddr" toml:"ConsulAddr"` // consul服务地址
@@ -51,9 +51,9 @@ type RegConfig struct {
 	PrometheusAddr     string `json:"PrometheusAddr" toml:"PrometheusAddr"`         // prometheus 服务地址
 	PrometheusBindAddr string `json:"PrometheusBindAddr" toml:"PrometheusBindAddr"` // prometheus 绑定的地址
 
-	ConfigPath  string                  // 配置文件路径
+	ConfigPath  string                  `json:"-" toml:"-"`                     // 配置文件路径
 	PassingOnly bool                    `json:"PassingOnly" toml:"PassingOnly"` // 服务发现时是否只获取正常的服务信息
-	QueryOpts   *consulapi.QueryOptions // 服务发现选项
+	QueryOpts   *consulapi.QueryOptions `json:"-" toml:"-"`                     // 服务发现选项
 }
 
 // 读取配置
