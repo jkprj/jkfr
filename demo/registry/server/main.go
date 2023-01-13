@@ -20,7 +20,7 @@ func main() {
 
 func RegistryDefaultServer() {
 	// registry, err := jkregistry.RegistryServerWithServerAddr("test", "127.0.0.1:9999")
-	registry, err := jkregistry.RegistryServer("test")
+	registry, err := jkregistry.RegistryServer("test1")
 	if nil != err {
 		jklog.Errorw("jkregistry.RegistryServer fail", "err", err)
 		return

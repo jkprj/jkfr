@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -28,6 +29,18 @@ func GetFreePort() (port int) {
 
 // 解析服务地址
 func ParseHostAddr(addr string) (hostIP string, port int, err error) {
+
+	if "" == addr {
+		return "", 0, nil
+	}
+
+	if strings.Index(addr, "]") == -1 && strings.Index(addr, ":") == -1 { // Ipv4 没有端口情况
+		return addr, 0, nil
+	}
+
+	if strings.Index(addr, "]") != -1 && strings.Index(addr, "]:") == -1 { // ipv6 没有端口情况
+		return addr, 0, nil
+	}
 
 	strPort := ""
 	hostIP, strPort, err = net.SplitHostPort(addr)

@@ -1,8 +1,8 @@
 {
 	"Registry":{
 		"ServerAddr":"127.0.0.1:9999",
-		"ConsulAddr":"192.168.213.184:8500",
-		"HealthCheckAddr":"192.168.213.184",
+		"ConsulAddr":"192.168.213.193:8500",
+		"HealthCheckAddr":"192.168.213.193",
 		"HealthCheckInterval":1,
 		"HealthCheckTimeOut":1,
 		"ConsulTags":["qjk","jinkun", "123", "test", "test2"],

@@ -65,6 +65,7 @@ func defaultconfig(name string) *RegConfig {
 	cfg.ServerAddr = jkos.GetEnvString("R_SERVER_ADDR", "")
 	cfg.ConsulAddr = jkos.GetEnvString("R_CONSUL_ADDR", "127.0.0.1:8500")
 	cfg.HealthCheckAddr = jkos.GetEnvString("R_HEALTH_CHECK_ADDR", "127.0.0.1")
+	cfg.HealthCheckBindAddr = jkos.GetEnvString("R_HEALTH_CHECK_BIND_ADDR", "")
 	cfg.HealthCheckInterval = jkos.GetEnvInt("R_HEALTH_CHECK_INTERVAL", 1)
 	cfg.HealthCheckTimeOut = jkos.GetEnvInt("R_HEALTH_CHECK_TIMEOUT", 60)
 	cfg.DeregisterCriticalServiceAfter = jkos.GetEnvInt("R_DEREGISTER_CRITICAL_SERVICE_AFTER", 30)
@@ -158,6 +159,13 @@ func WithBasicAuth(userName, password string) RegOption {
 func WithHealthCheckAddr(addr string) RegOption {
 	return func(cfg *RegConfig) {
 		cfg.HealthCheckAddr = addr
+	}
+}
+
+// consul健康检查绑定服务地址
+func WithHealthCheckBindAddr(addr string) RegOption {
+	return func(cfg *RegConfig) {
+		cfg.HealthCheckBindAddr = addr
 	}
 }
 
