@@ -8,6 +8,7 @@ import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	jktrans "github.com/jkprj/jkfr/gokit/transport"
@@ -16,6 +17,11 @@ import (
 )
 
 var ErrTimeout error = errors.New("Timeout")
+
+const (
+	UNREAD  = 0
+	READING = 1
+)
 
 type rpcReq struct {
 	req     *rpc.Request
@@ -31,10 +37,11 @@ type timeoutCodec struct {
 	readTimeout  time.Duration
 	writeTimeout time.Duration
 
-	seq2em    map[uint64]*list.Element
-	liRpcReq  *list.List
-	headerSeq uint64
-	mtReq     sync.Mutex
+	seq2em        map[uint64]*list.Element
+	liRpcReq      *list.List
+	headerSeq     uint64
+	mtReq         sync.Mutex
+	isReadingBody int32
 }
 
 func NewTimeoutCodec(codec rpc.ClientCodec, conn net.Conn, readTimeout, writeTimeout time.Duration) rpc.ClientCodec {
@@ -64,12 +71,12 @@ func NewTimeoutCodecEx(conn net.Conn, o *jkpool.Options) rpc.ClientCodec {
 func (tc *timeoutCodec) WriteRequest(r *rpc.Request, body interface{}) (err error) {
 
 	tc.pushReq(r)
-
-	tc.conn.SetWriteDeadline(time.Now().Add(tc.writeTimeout))
+	tc.setDeadline()
 
 	err = tc.codec.WriteRequest(r, body)
 	if nil != err {
 		tc.removeReq(r.Seq)
+		tc.setDeadline()
 	}
 
 	// jklog.Infow("WriteRequest leave")
@@ -84,7 +91,7 @@ func (tc *timeoutCodec) ReadResponseHeader(r *rpc.Response) (err error) {
 		return nil
 	}
 
-	tc.conn.SetReadDeadline(time.Now().Add(tc.readTimeout))
+	tc.setDeadline()
 
 	err = tc.codec.ReadResponseHeader(r)
 	if nil == err {
@@ -102,13 +109,14 @@ func (tc *timeoutCodec) ReadResponseBody(body interface{}) (err error) {
 		return nil
 	}
 
-	// tc.mtReq.Lock()
-	// jklog.Infow("ReadResponseBody into", "headerSeq", tc.headerSeq, "li-len", tc.liRpcReq.Len(), "map-len", len(tc.seq2em))
-	// tc.mtReq.Unlock()
+	atomic.StoreInt32(&tc.isReadingBody, READING)
 
 	tc.conn.SetReadDeadline(time.Now().Add(tc.readTimeout))
+	err = tc.codec.ReadResponseBody(body)
 
-	return tc.codec.ReadResponseBody(body)
+	atomic.StoreInt32(&tc.isReadingBody, UNREAD)
+
+	return err
 }
 
 func (tc *timeoutCodec) Close() error {
@@ -192,4 +200,21 @@ func (tc *timeoutCodec) removeReq(seq uint64) *rpcReq {
 	tc.mtReq.Unlock()
 
 	return rq
+}
+
+func (tc *timeoutCodec) setDeadline() {
+	tc.mtReq.Lock()
+
+	if 0 < tc.liRpcReq.Len() {
+		tc.conn.SetReadDeadline(time.Now().Add(tc.readTimeout))
+		tc.conn.SetWriteDeadline(time.Now().Add(tc.writeTimeout))
+	} else {
+		if UNREAD == atomic.LoadInt32(&tc.isReadingBody) { // 正则读body不能将deadline设置为365天
+			tc.conn.SetReadDeadline(time.Now().Add(365 * 24 * time.Hour))
+		}
+
+		tc.conn.SetWriteDeadline(time.Now().Add(365 * 24 * time.Hour))
+	}
+
+	tc.mtReq.Unlock()
 }
