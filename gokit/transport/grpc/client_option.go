@@ -97,7 +97,7 @@ func defaultClientConfig(name string) *ClientConfig {
 	cfg.RateLimit = rate.Limit(jkos.GetEnvInt("C_RATE_LIMIT", 0))
 	cfg.TimeOut = jkos.GetEnvInt("C_TIME_OUT", 60)
 	cfg.PoolCap = jkos.GetEnvInt("C_POOL_CAP", 2)
-	cfg.MaxCap = jkos.GetEnvInt("C_MAX_CAP", 10)
+	cfg.MaxCap = jkos.GetEnvInt("C_MAX_CAP", 32)
 	cfg.PassingOnly = jkos.GetEnvBool("C_PASSING_ONLY", true)
 	cfg.KeepAlive = jkos.GetEnvBool("C_KEEP_ALIVE", true)
 

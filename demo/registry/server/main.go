@@ -32,13 +32,15 @@ func RegistryDefaultServer() {
 }
 
 func RegistryServerWithOption() {
-	registry, err := jkregistry.RegistryServer("test",
+	registry, err := jkregistry.RegistryServer(
+		"test",
 		jkregistry.WithServerAddr("192.168.213.184:9999"),
 		jkregistry.WithTags("qjk", "test", "123"),
 		jkregistry.WithHealthCheckInterval(1),
 		jkregistry.WithHealthCheckTimeOut(1),
 		jkregistry.WithHealthCheckAddr("192.168.213.184:9876"),
-		jkregistry.WithConsulAddr("192.168.213.184:8500"))
+		jkregistry.WithConsulAddr("192.168.213.184:8500"),
+	)
 
 	if nil != err {
 		jklog.Errorw("jkregistry.RegistryServer fail", "err", err)

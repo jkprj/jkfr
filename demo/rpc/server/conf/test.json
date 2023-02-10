@@ -1,7 +1,7 @@
 {
 	"Server":{
 		"ServerAddr":"127.0.0.1:6666",
-		"#RateLimit": 10.0,
+		"#RateLimit": 10,
 		"RpcName": "HelloWord",
 		"#Codec": "json"
 	},
