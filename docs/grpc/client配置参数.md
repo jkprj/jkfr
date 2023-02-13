@@ -145,7 +145,7 @@ func runClientWithOption() {
 
 ### GRPCDialOps
 
-**描述：**
+**描述：**grpc.Dial 的option，可以在运行时设置，也可以通过配置文件配置部分option，不设置就是grpc 默认
 
 **环境变量：**
 
@@ -217,7 +217,7 @@ func runClientWithOption() {
 
 ### TimeOut
 
-**描述：**
+**描述：**设置连接池请求的超时时间
 
 **环境变量：**C_TIME_OUT
 
@@ -259,7 +259,7 @@ func runClientWithOption() {
 
 ### WriteBufferSize
 
-**描述：**
+**描述：**参考 grpc 的 WithWriteBufferSize(s int) DialOption
 
 **环境变量：**C_WRITE_BUFFER_SIZE
 
@@ -267,7 +267,7 @@ func runClientWithOption() {
 
 ### ReadBufferSize
 
-**描述：**
+**描述：**参考 grpc 的 WithReadBufferSize(s int) DialOption
 
 **环境变量：**C_READ_BUFFER_SIZE
 
@@ -275,7 +275,7 @@ func runClientWithOption() {
 
 ### MaxMsgSize
 
-**描述：**
+**描述：**参考 grpc 的 WithMaxMsgSize(s int) DialOption
 
 **环境变量：**C_MAX_MSG_SIZE
 
@@ -283,7 +283,7 @@ func runClientWithOption() {
 
 ### MaxSendMsgSize
 
-**描述：**
+**描述：**参考 grpc 的 func MaxCallSendMsgSize(bytes int) CallOption
 
 **环境变量：**C_MAX_SEND_MSG_SIZE
 
@@ -291,7 +291,7 @@ func runClientWithOption() {
 
 ### MaxRecvMsgSize
 
-**描述：**
+**描述：**参考 grpc 的 MaxCallRecvMsgSize(bytes int) CallOption 
 
 **环境变量：**C_MAX_RECV_MSG_SIZE
 
@@ -299,7 +299,7 @@ func runClientWithOption() {
 
 ### Timeout
 
-**描述：**
+**描述：**参考 grpc 的 WithTimeout(d time.Duration) DialOption
 
 **环境变量：**C_TIMEOUT
 
@@ -307,7 +307,7 @@ func runClientWithOption() {
 
 ### EnableCompressor
 
-**描述：**
+**描述：**是否启用压缩
 
 **环境变量：**C_ENABLE_COMPRESSOR
 
@@ -315,7 +315,7 @@ func runClientWithOption() {
 
 ### CompressorLevel
 
-**描述：**
+**描述：**压缩等级，需要设置EnableCompressor为true，压缩方式是grpc自带的gzip Compressor
 
 **环境变量：**C_COMPRESSOR_LEVEL
 
@@ -323,7 +323,7 @@ func runClientWithOption() {
 
 ### InitialWindowSize
 
-**描述：**
+**描述：**参考 grpc 的 WithInitialWindowSize(s int32) DialOption
 
 **环境变量：**C_INITIAL_WINDOW_SIZE
 
@@ -331,7 +331,7 @@ func runClientWithOption() {
 
 ### InitialConnWindowSize
 
-**描述：**
+**描述：**参考 grpc 的 WithInitialConnWindowSize(s int32) DialOption
 
 **环境变量：**C_INITIAL_CONN_WINDOW_SIZE
 
@@ -343,7 +343,7 @@ func runClientWithOption() {
 
 ### PermitWithoutStream
 
-**描述：**
+**描述：**参考 grpc 的 WithKeepaliveParams(kp keepalive.ClientParameters) DialOption 的keepalive.ClientParameters 的 PermitWithoutStream 成员
 
 **环境变量：**C_KEEPALIVE_PERMIT_WITHOUT_STREAM
 
@@ -351,7 +351,7 @@ func runClientWithOption() {
 
 ### Time
 
-**描述：**
+**描述：**参考 grpc 的 WithKeepaliveParams(kp keepalive.ClientParameters) DialOption 的keepalive.ClientParameters 的 Time 成员。使用配置文件配置时，单位是秒
 
 **环境变量：**C_KEEPALIVE_TIME
 
@@ -359,7 +359,7 @@ func runClientWithOption() {
 
 ### Timeout
 
-**描述：**
+**描述：**参考 grpc 的 WithKeepaliveParams(kp keepalive.ClientParameters) DialOption 的keepalive.ClientParameters 的 Timeout 成员。使用配置文件配置时，单位是秒
 
 **环境变量：**C_KEEPALIVE_TIMEOUT
 

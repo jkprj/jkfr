@@ -151,7 +151,7 @@ func runServerWithOption() {
 
 ### BindAddr
 
-**描述：**
+**描述：**服务绑定地址，如果ServerAddr，BindAddr其中之一为空，则这两个配置则一样
 
 **环境变量：**S_BIND_ADDR
 
@@ -159,7 +159,7 @@ func runServerWithOption() {
 
 ### RegOps
 
-**描述：**
+**描述：**注册到consul的配置参数，参考register的配置参数说明
 
 **环境变量：**
 
@@ -167,7 +167,7 @@ func runServerWithOption() {
 
 ### GRPCSvrOps
 
-**描述：**
+**描述：**grpc.NewServer 的 option，可以在运行时设置，也可以通过配置文件配置部分option，不设置就是grpc 默认
 
 **环境变量：**
 
@@ -175,7 +175,7 @@ func runServerWithOption() {
 
 ### ConfigPath
 
-**描述：**
+**描述：**配置文件路径，该配置不能通过配置文件配置，只能通过环境变量，配置选项配置，如果未设置默认会读取当前程序所在目录的 conf/[server-name].json，conf/[server-name].json
 
 **环境变量：**S_CONFIG_PATH
 
@@ -183,23 +183,15 @@ func runServerWithOption() {
 
 ### RateLimit
 
-**描述：**
+**描述：**限流器，设置每秒最大请求数，默认为0不限制
 
 **环境变量：**S_RATE_LIMIT
 
 **配置选项：**ServerLimit(limit rate.Limit) ServerOption
 
-### PrometheusNameSpace
-
-**描述：**
-
-**环境变量：**S_PROMETHEUS_NAME_SPACE
-
-**配置选项：**ServerPrometheusNameSpace(prometheusnamespace string) ServerOption
-
 ### ActionMiddlewares
 
-**描述：**
+**描述：**设置 rpc 服务函数响应前后处理方式
 
 **环境变量：**
 
@@ -209,7 +201,7 @@ func runServerWithOption() {
 
 ### WriteBufferSize
 
-**描述：**
+**描述：**参考 grpc 的 WriteBufferSize(s int) ServerOption 
 
 **环境变量：**S_WRITE_BUFFER_SIZE
 
@@ -217,7 +209,7 @@ func runServerWithOption() {
 
 ### ReadBufferSize
 
-**描述：**
+**描述：**参考 grpc 的 ReadBufferSize(s int) ServerOption
 
 **环境变量：**S_READ_BUFFER_SIZE
 
@@ -225,7 +217,7 @@ func runServerWithOption() {
 
 ### MaxMsgSize
 
-**描述：**
+**描述：**参考 grpc 的 MaxMsgSize(m int) ServerOption
 
 **环境变量：**S_MAX_MSG_SIZE
 
@@ -233,7 +225,7 @@ func runServerWithOption() {
 
 ### MaxRecvMsgSize
 
-**描述：**
+**描述：**参考 grpc 的 MaxRecvMsgSize(m int) ServerOption
 
 **环境变量：**S_MAX_RECV_MSG_SIZE
 
@@ -241,7 +233,7 @@ func runServerWithOption() {
 
 ### MaxSendMsgSize
 
-**描述：**
+**描述：**参考 grpc 的 MaxSendMsgSize(m int) ServerOption
 
 **环境变量：**S_MAX_SEND_MSG_SIZE
 
@@ -249,7 +241,7 @@ func runServerWithOption() {
 
 ### ConnectionTimeout
 
-**描述：**
+**描述：**参考 grpc 的 ConnectionTimeout(d time.Duration) ServerOption
 
 **环境变量：**S_CONNECTION_TIMEOUT
 
@@ -257,7 +249,7 @@ func runServerWithOption() {
 
 ### EnableCompressor
 
-**描述：**
+**描述：**是否启用压缩
 
 **环境变量：**S_ENABLE_COMPRESSOR
 
@@ -265,7 +257,7 @@ func runServerWithOption() {
 
 ### CompressorLevel
 
-**描述：**
+**描述：**压缩等级，需要设置EnableCompressor为true，压缩方式是grpc自带的gzip Compressor
 
 **环境变量：**S_COMPRESSOR_LEVEL
 
@@ -273,7 +265,7 @@ func runServerWithOption() {
 
 ### MaxConcurrentStreams
 
-**描述：**
+**描述：**参考 grpc 的 MaxConcurrentStreams(n uint32) ServerOption
 
 **环境变量：**S_MAX_CONCURRENT_STREAMS
 
@@ -281,7 +273,7 @@ func runServerWithOption() {
 
 ### InitialWindowSize
 
-**描述：**
+**描述：**参考 grpc 的 InitialWindowSize(s int32) ServerOption
 
 **环境变量：**S_INITIAL_WINDOW_SIZE
 
@@ -289,7 +281,7 @@ func runServerWithOption() {
 
 ### InitialConnWindowSize
 
-**描述：**
+**描述：**参考 grpc 的 InitialConnWindowSize(s int32) ServerOption 
 
 **环境变量：**S_INITIAL_CONN_WINDOW_SIZE
 
@@ -297,7 +289,7 @@ func runServerWithOption() {
 
 ### MaxHeaderListSize
 
-**描述：**
+**描述：**参考 grpc 的 HeaderTableSize(s uint32) ServerOption
 
 **环境变量：**S_MAX_HEADER_LIST_SIZE
 
@@ -309,7 +301,7 @@ func runServerWithOption() {
 
 ### MaxConnectionIdle
 
-**描述：**
+**描述：**参考 grpc 的 KeepaliveParams(kp keepalive.ServerParameters) ServerOption 的keepalive.ServerParameters 的 MaxConnectionIdle成员。使用配置文件配置时，单位是秒
 
 **环境变量：**S_KEEPALIVE_MAX_CONNECTION_IDLE
 
@@ -317,7 +309,7 @@ func runServerWithOption() {
 
 ### MaxConnectionAge
 
-**描述：**
+**描述：**参考 grpc 的 KeepaliveParams(kp keepalive.ServerParameters) ServerOption 的keepalive.ServerParameters 的 MaxConnectionIdle成员。使用配置文件配置时，单位是秒
 
 **环境变量：**S_KEEPALIVE_MAX_CONNECTION_AGE
 
@@ -325,7 +317,7 @@ func runServerWithOption() {
 
 ### MaxConnectionAgeGrace
 
-**描述：**
+**描述：**参考 grpc 的 KeepaliveParams(kp keepalive.ServerParameters) ServerOption 的keepalive.ServerParameters 的 MaxConnectionAgeGrace成员。使用配置文件配置时，单位是秒
 
 **环境变量：**S_KEEPALIVE_MAX_CONNECTION_AGE_GRACE
 
@@ -333,7 +325,7 @@ func runServerWithOption() {
 
 ### Time
 
-**描述：**
+**描述：**参考 grpc 的 KeepaliveParams(kp keepalive.ServerParameters) ServerOption 的keepalive.ServerParameters 的 Time成员。使用配置文件配置时，单位是秒
 
 **环境变量：**S_KEEPALIVE_TIME
 
@@ -341,7 +333,7 @@ func runServerWithOption() {
 
 ### Timeout
 
-**描述：**
+**描述：**参考 grpc 的 KeepaliveParams(kp keepalive.ServerParameters) ServerOption 的keepalive.ServerParameters 的 Timeout成员。使用配置文件配置时，单位是秒
 
 **环境变量：**S_KEEPALIVE_TIMEOUT
 
