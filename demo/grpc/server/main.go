@@ -11,10 +11,10 @@ import (
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
 	jkgrpc "github.com/jkprj/jkfr/gokit/transport/grpc"
 	jklog "github.com/jkprj/jkfr/log"
-	pb "github.com/jkprj/jkfr/protobuf/demo"
-	"github.com/jkprj/jkfr/protobuf/demo/hello-service/handlers"
-	"github.com/jkprj/jkfr/protobuf/demo/hello-service/svc"
-	"github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/server"
+	helloPB "github.com/jkprj/jkfr/protobuf/demo"
+	helloHandlers "github.com/jkprj/jkfr/protobuf/demo/hello-service/handlers"
+	helloSvc "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc"
+	helloServer "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/server"
 
 	// kitgrpc "github.com/go-kit/kit/transport/grpc"
 	"google.golang.org/grpc"
@@ -34,8 +34,8 @@ func ServerFinalizerFunc(ctx context.Context, err error) {}
 
 func RegisterServer(grpcServer *grpc.Server, serverEndpoints interface{}) {
 
-	endpoints := serverEndpoints.(*svc.Endpoints)
-	pb.RegisterHelloServer(grpcServer, endpoints)
+	endpoints := serverEndpoints.(*helloSvc.Endpoints)
+	helloPB.RegisterHelloServer(grpcServer, endpoints)
 
 	// or 使用以下方式创建，可以设置些选项：请求处理前，处理完成返回前，返回后的回调函数，及设置日志句柄，错误回调
 
@@ -55,8 +55,8 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	jklog.InitLogger()
 
-	handlers.RegisterServer(jkhandlers.NewService())
-	endpoints := server.NewEndpoints()
+	helloHandlers.RegisterServer(jkhandlers.NewService())
+	endpoints := helloServer.NewEndpoints()
 	fmt.Printf("%x", &endpoints)
 
 	// runDefaultServer(&endpoints)
@@ -67,13 +67,13 @@ func main() {
 	// runMutiServer()
 }
 
-func runDefaultServer(endpoints *svc.Endpoints) {
+func runDefaultServer(endpoints *helloSvc.Endpoints) {
 	jkgrpc.RunServerWithServerAddr("test", "192.168.213.184:9090", endpoints, RegisterServer)
 	// or
 	// jkgrpc.RunServer("test", endpoints, RegisterServer, jkgrpc.ServerAddr("192.168.213.184:9090"))
 }
 
-func runServerWithOption(endpoints *svc.Endpoints) {
+func runServerWithOption(endpoints *helloSvc.Endpoints) {
 
 	compressor, _ := grpc.NewGZIPCompressorWithLevel(gzip.BestCompression)
 
@@ -106,24 +106,24 @@ func runServerWithOption(endpoints *svc.Endpoints) {
 	)
 }
 
-func runServerWithDefaultConfigFile(endpoints *svc.Endpoints) {
+func runServerWithDefaultConfigFile(endpoints *helloSvc.Endpoints) {
 	// jkgrpc.RunServer("test", endpoints, RegisterServer)
 	// or
 	jkgrpc.RunServer("test", endpoints, RegisterServer)
 }
 
-func runServerWithConfigFileOption(endpoints *svc.Endpoints) {
+func runServerWithConfigFileOption(endpoints *helloSvc.Endpoints) {
 	jkgrpc.RunServer("test", endpoints, RegisterServer, jkgrpc.ServerConfigFile("conf/test.toml"))
 	// or
 	// jkgrpc.RunServer("test", endpoints, RegisterServer, jkgrpc.ServerConfigFile("conf/test.json"))
 }
 
 func runMutiServer() {
-	handlers.RegisterServer(jkhandlers.NewService())
-	endpoints1 := server.NewEndpoints()
+	helloHandlers.RegisterServer(jkhandlers.NewService())
+	endpoints1 := helloServer.NewEndpoints()
 	go jkgrpc.RunServerWithServerAddr("test", "192.168.213.184:9090", &endpoints1, RegisterServer)
 
-	handlers.RegisterServer(jkhandlers.NewService())
-	endpoints2 := server.NewEndpoints()
+	helloHandlers.RegisterServer(jkhandlers.NewService())
+	endpoints2 := helloServer.NewEndpoints()
 	jkgrpc.RunServerWithServerAddr("test", "127.0.0.1:9090", &endpoints2, RegisterServer)
 }

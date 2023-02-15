@@ -83,10 +83,10 @@ import (
 	jkhandlers "github.com/jkprj/jkfr/demo/grpc/server/handlers"
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
 	jkgrpc "github.com/jkprj/jkfr/gokit/transport/grpc"
-	pb "github.com/jkprj/jkfr/protobuf/demo"
-	"github.com/jkprj/jkfr/protobuf/demo/hello-service/handlers"
-	"github.com/jkprj/jkfr/protobuf/demo/hello-service/svc"
-	"github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/server"
+	helloPB "github.com/jkprj/jkfr/protobuf/demo"
+	helloHandlers "github.com/jkprj/jkfr/protobuf/demo/hello-service/handlers"
+	helloSvc "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc"
+	helloServer "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/server"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -94,14 +94,14 @@ import (
 
 func RegisterServer(grpcServer *grpc.Server, serverEndpoints interface{}) {
 
-	endpoints := serverEndpoints.(*svc.Endpoints)
-	pb.RegisterHelloServer(grpcServer, endpoints)
+	endpoints := serverEndpoints.(*helloSvc.Endpoints)
+	helloPB.RegisterHelloServer(grpcServer, endpoints)
 }
 
 func runServerWithOption() {
 
-    handlers.RegisterServer(jkhandlers.NewService())
-	endpoints := server.NewEndpoints()
+    helloHandlers.RegisterServer(jkhandlers.NewService())
+	endpoints := helloServer.NewEndpoints()
     
 	compressor, _ := grpc.NewGZIPCompressorWithLevel(gzip.BestCompression)
 
