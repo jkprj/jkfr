@@ -174,7 +174,7 @@ type ClientFatory func(cfg *ClientConfig) pool.ClientFatory
 
 ## RetryIntervalMS
 
-**描述：**请求失败重试间隔，单位毫秒，默认1000毫秒
+**描述：**请求失败重试间隔时间，单位毫秒，默认1000毫秒
 
 **环境变量：**C_RETRY_INTERVAL_MS
 
