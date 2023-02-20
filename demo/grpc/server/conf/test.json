@@ -5,7 +5,8 @@
 		"#RateLimit": 10
 	},
 	"Registry":{
-		"ConsulAddr":"127.0.0.1:8500"
+		"ConsulAddr":"127.0.0.1:8500",
+		"ConsulTags": ["grpc", "123"]
 	},
 	"GRPC":{
 		"WriteBufferSize": 102400,

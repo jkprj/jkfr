@@ -278,7 +278,7 @@ func (client *GRPCClient) makeRuquestEndpoint() endpoint.Endpoint {
 		if jktrans.STRATEGY_ROUND == client.cfg.Strategy {
 			balancer = lb.NewRoundRobin(client.consulEndpointer)
 		} else if jktrans.STRATEGY_RANDOM == client.cfg.Strategy {
-			balancer = jktrans.NewSafeBalancer(jklb.NewRandom(client.consulEndpointer, time.Now().UnixNano()))
+			balancer = jklb.NewRandom(client.consulEndpointer, time.Now().UnixNano())
 		} else {
 			balancer = jklb.NewLeastBalancer(client.consulEndpointer)
 		}

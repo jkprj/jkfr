@@ -5,6 +5,7 @@ ServerAddr = "192.168.213.184:9900"
 
 [Registry]
 ConsulAddr = "192.168.213.184:8500"
+ConsulTags = ["grpc", "123"]
 
 [GRPC]
 WriteBufferSize = 102400

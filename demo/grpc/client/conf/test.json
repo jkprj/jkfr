@@ -1,7 +1,7 @@
 {
     "Client": {
         "#RateLimit": 2,
-        "#ConsulTags": ["123"],
+        "ConsulTags": ["grpc", "123"],
         "Strategy": "random",
         "#Retry": 3,
         "#TimeOut": 30,

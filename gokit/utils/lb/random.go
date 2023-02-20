@@ -5,7 +5,7 @@ package lb
 import (
 	"math/rand"
 
-	urand "github.com/jkprj/jkfr/gokit/utils/rand"
+	jkrand "github.com/jkprj/jkfr/gokit/utils/rand"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/sd"
@@ -15,7 +15,7 @@ import (
 func NewRandom(s sd.Endpointer, seed int64) glb.Balancer {
 	return &random{
 		s: s,
-		r: rand.New(urand.NewSource(seed)),
+		r: rand.New(jkrand.NewSource(seed)),
 	}
 }
 

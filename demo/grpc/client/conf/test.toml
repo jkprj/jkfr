@@ -1,7 +1,7 @@
 [Client]
 #RateLimit = 2.0
-#ConsulTags = ["123"]
-#Strategy = "least"
+ConsulTags = ["grpc", "123"]
+Strategy = "random"
 #TimeOut = 30
 Retry = 3
 #KeepAlive = true

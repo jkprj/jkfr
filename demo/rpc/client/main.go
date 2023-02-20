@@ -31,7 +31,7 @@ var server = "127.0.0.1:6666"
 func init_param() {
 	flag.StringVar(&server_type, "type", "", "rpc type")
 	flag.StringVar(&server, "server", "", "server addr")
-	flag.IntVar(&th_count, "th", 64, "thread count")
+	flag.IntVar(&th_count, "th", 10000, "thread count")
 	flag.IntVar(&ss_count, "ss", 8, "session count")
 	flag.Parse()
 

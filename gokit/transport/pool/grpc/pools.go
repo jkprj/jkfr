@@ -144,12 +144,12 @@ func (pls *GRPCPools) call_with_func(callFunc func() (resp interface{}, err erro
 
 		retry++
 
-		log.Errorw("Call fail", "retryTimes", retry, "error", err)
+		// log.Errorw("Call fail", "retryTimes", retry, "error", err)
 
 		if nil != lastErr {
-			lastErr = fmt.Errorf("%s; retryTimes_%d_err:%s", lastErr.Error(), retry, err.Error())
+			lastErr = fmt.Errorf("%s; %s", lastErr.Error(), retry, err.Error())
 		} else {
-			lastErr = fmt.Errorf("retryTimes_%d_err:%s", retry, err.Error())
+			lastErr = err
 		}
 
 		if pls.retryTimes <= retry {
