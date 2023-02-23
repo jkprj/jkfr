@@ -118,16 +118,22 @@ func (pl *Pool) Get() (plc PoolClient, err error) {
 func (pl *Pool) GetConn() (conn net.Conn, err error) {
 
 	pl.mtPool.Lock()
-	defer pl.mtPool.Unlock()
 
 	if pl.bClose {
+		pl.mtPool.Unlock()
 		return nil, ErrClosed
 	}
 
 	pc, err := pl.get()
 	if nil != err {
+		pl.mtPool.Unlock()
 		return nil, err
 	}
+
+	pc.ref++
+	pl.put_good(pc.client)
+
+	pl.mtPool.Unlock()
 
 	return pc.conn, nil
 }
