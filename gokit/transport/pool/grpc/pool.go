@@ -4,6 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"google.golang.org/grpc/codes"
+
+	"google.golang.org/grpc/status"
+
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
 )
 
@@ -49,7 +53,16 @@ func (rp *GRPCPool) CallWithContext(ctx context.Context, action string, request 
 
 	resp, err := client.call(ctx, action, request)
 	if nil != err {
-		rp.Put(client, jkpool.BAD)
+		st, ok := status.FromError(err)
+		if ok && (codes.Canceled == st.Code() ||
+			codes.Unknown == st.Code() ||
+			codes.Unimplemented == st.Code()) {
+
+			rp.Put(client, jkpool.GOOD) // 非网络原因导致的失败不回收
+		} else {
+			rp.Put(client, jkpool.BAD)
+		}
+
 		return nil, err
 	}
 
