@@ -36,7 +36,7 @@ type URespone struct {
 
 func main() {
 	resp := new(URespone)
-    // defaut: consuladdr=127.0.0.1:8500
+	// defaut: consuladdr=127.0.0.1:8500
 	err := jkrpc.Call("test", "Hello.HowAreYou", &URequest{}, resp)
 	jklog.Infow("call respone", "resp:", resp, "err", err)
 }
@@ -96,7 +96,7 @@ import (
 )
 
 func client_fatory(conn *grpc.ClientConn) (server interface{}, err error) {
-    pbsvr, err := hellogrpc.New(conn) // protoc生成的go new代码
+	pbsvr, err := hellogrpc.New(conn) // protoc生成的go new代码
 	return pbsvr, err
 }
 
