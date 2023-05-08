@@ -182,7 +182,7 @@ func pressureTest() {
 	for i := 0; i < th_count; i++ {
 		go func() {
 			for {
-				err := jkrpc.Call("test", "HelloWord.Hello", &URequest{}, resp)
+				err := jkrpc.Call("test", "Hello.Hello", &URequest{}, resp)
 				if nil != err {
 					jklog.Errorw("call rpc fail", "err", err)
 					break

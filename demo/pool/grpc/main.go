@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -45,6 +46,24 @@ func main() {
 
 	init_param()
 
+	// go test_pool()
+	loop_test()
+
+	statistics()
+}
+
+func loop_test() {
+	for i := 0; i < 100; i++ {
+		go func() {
+			for {
+				test_pool()
+			}
+		}()
+	}
+}
+
+func test_pool() {
+
 	opt := jkpool.NewOptions()
 	opt.MaxCap = ss_count
 	opt.Factory = grpc_pools.GRPCClientFactory(
@@ -61,21 +80,40 @@ func main() {
 	}
 
 	req := &pb.HelloRequest{}
+	wg := sync.WaitGroup{}
+	bexit := false
 
 	for i := 0; i < th_count; i++ {
+
+		wg.Add(1)
+
 		go func() {
+
+			defer wg.Done()
+
 			var err error
-			for {
+			for !bexit {
 				// resp, err := grpcPools.Call("SayHello", &pb.HelloRequest{})
-				// log.Infow("call respone", "resp", resp, "err", err)
+
 				_, err = grpcPools.Call("SayHello", req)
 				if nil != err {
-					log.Panic(err)
+					// log.Errorw("call respone", "resp", resp, "err", err)
+					continue
 				}
 				atomic.AddUint64(&total, 1)
 			}
 		}()
 	}
 
-	statistics()
+	time.Sleep(time.Second * 5)
+
+	bexit = true
+
+	grpcPools.Close()
+
+	// log.Infow("bexit bexit bexit bexit")
+
+	wg.Wait()
+
+	// log.Infow("Wait Wait Wait Wait")
 }

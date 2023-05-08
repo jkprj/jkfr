@@ -6,12 +6,43 @@ import (
 	"fmt"
 	"net"
 	"reflect"
+	"time"
 
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
 	jklog "github.com/jkprj/jkfr/log"
 
 	"google.golang.org/grpc"
 )
+
+type ClientConn struct {
+	conn *grpc.ClientConn
+}
+
+func (cc *ClientConn) LocalAddr() net.Addr {
+	return nil
+}
+func (cc *ClientConn) RemoteAddr() net.Addr {
+	addr, _ := net.ResolveTCPAddr("", cc.conn.Target())
+	return addr
+}
+func (cc *ClientConn) Read(b []byte) (n int, err error) {
+	return 0, nil
+}
+func (cc *ClientConn) Write(b []byte) (n int, err error) {
+	return 0, nil
+}
+func (cc *ClientConn) Close() error {
+	return cc.conn.Close()
+}
+func (cc *ClientConn) SetDeadline(t time.Time) error {
+	return nil
+}
+func (cc *ClientConn) SetReadDeadline(t time.Time) error {
+	return nil
+}
+func (cc *ClientConn) SetWriteDeadline(t time.Time) error {
+	return nil
+}
 
 type ClientHandle struct {
 	host        string
@@ -101,6 +132,6 @@ func GRPCClientFactory(clientFatory ClientFatory, opts ...grpc.DialOption) jkpoo
 			clientHandle.action2func[action] = vClient.MethodByName(action)
 		}
 
-		return clientHandle, nil, nil
+		return clientHandle, &ClientConn{conn: conn}, nil
 	}
 }

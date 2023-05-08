@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -13,13 +14,13 @@ import (
 
 type URequest struct {
 	Name  string `json:"Name,omitempty"`
-	Pause int    `json:"Pause,omitempty"`
+	Pause uint64 `json:"Pause,omitempty"`
 }
 
 type URespone struct {
 	Msg   string `json:"Msg,omitempty"`
 	Name  string `json:"Name,omitempty"`
-	Pause int    `json:"Pause,omitempty"`
+	Pause uint64 `json:"Pause,omitempty"`
 }
 
 var th_count int = 64
@@ -39,7 +40,7 @@ func statistics() {
 
 func init_param() {
 	flag.StringVar(&server_type, "type", "", "rpc type")
-	flag.StringVar(&server, "server", "", "server addr")
+	flag.StringVar(&server, "server", "127.0.0.1:6666", "server addr")
 	flag.IntVar(&th_count, "th", 64, "thread count")
 	flag.IntVar(&ss_count, "ss", 8, "session count")
 	flag.Parse()
@@ -55,13 +56,23 @@ func main() {
 
 	go statistics()
 
-	test_pool()
+	// test_pool()
 
-	// for {
-	// 	test_pool()
-	// }
+	loop_test_pool()
 
 	time.Sleep(time.Hour)
+}
+
+func loop_test_pool() {
+	for i := 0; i < 100; i++ {
+		go func() {
+			for {
+				test_pool()
+			}
+		}()
+	}
+
+	time.Sleep(time.Hour * 100000)
 }
 
 func test_pool() {
@@ -86,6 +97,7 @@ func test_pool() {
 
 	opt := jkpool.NewOptions()
 	opt.MaxCap = ss_count
+	opt.IdleTimeout = time.Minute
 	pls, err := rpcpool.NewRpcPools(
 		[]string{
 			server,
@@ -98,17 +110,30 @@ func test_pool() {
 	}
 
 	bexit := false
+	var pause uint64 = 0
+	var wg sync.WaitGroup
 
 	for i := 0; i < th_count; i++ {
 
+		wg.Add(1)
+
 		go func(id int) {
+
+			defer wg.Done()
+
 			resp := URespone{}
+			req := URequest{}
 
 			for !bexit {
-				err := pls.Call("HelloWord.Hello", URequest{}, &resp)
+				req.Pause = atomic.AddUint64(&pause, 1)
+				err := pls.Call("Hello.Hello", req, &resp)
 				if nil != err {
-					log.Errorw("call Hello.Hello fail", "error", err)
+					// log.Errorw("call Hello.Hello fail", "error", err)
 					return
+				}
+				// time.Sleep(time.Second)
+				if req.Pause != resp.Pause {
+					log.Infow("call succ", "req.Pause", req.Pause, "resp.Pause", resp.Pause)
 				}
 
 				atomic.AddUint64(&total, 1)
@@ -116,20 +141,25 @@ func test_pool() {
 		}(i)
 	}
 
-	time.Sleep(time.Hour * 24)
+	time.Sleep(time.Second * 5)
 
 	if !bexit {
 		bexit = true
 	}
 
-	log.Info("aaaaaaaaaaaaaaaaaaa")
+	// log.Info("aaaaaaaaaaaaaaaaaaa")
 
-	time.Sleep(time.Hour)
+	// time.Sleep(time.Hour)
 
-	log.Info("bbbbbbbbbbbbbbbbbbb")
+	// log.Info("bbbbbbbbbbbbbbbbbbb")
 
 	pls.Close()
 
-	log.Info("ccccccccccccccccccc")
+	// log.Info("ccccccccccccccccccc")
 
+	wg.Wait()
+
+	// log.Info("wwwwwwwwwwwwwwwwwww")
+
+	// time.Sleep(time.Second)
 }

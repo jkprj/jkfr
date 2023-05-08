@@ -37,28 +37,18 @@ func NewRpcPool(o *jkpool.Options) (p *RpcPool, err error) {
 	return p, nil
 }
 
-func (rp *RpcPool) get_client() (*rpc.Client, error) {
-	plclient, err := rp.pool.Get()
-	if nil != err {
-		// log.Errorw("rp.pool.Get fail", "error", err)
-		return nil, err
-	}
-
-	client, ok := plclient.(*rpc.Client)
-	if !ok {
-		log.Errorw("transfer *rpc.Client fail", "client", client)
-		return nil, errors.New("tranfer to rpc.Client fail")
-	}
-
-	return client, nil
-}
-
 func (rp *RpcPool) call(ctx context.Context, serviceMethod string, args interface{}, reply interface{}) error {
 
-	client, err := rp.get_client()
+	c, err := rp.pool.Get()
 	if nil != err {
-		// log.Errorw("get_client fail", "error", err)
+		// log.Errorw("rp.pool.Get fail", "error", err)
 		return err
+	}
+
+	client, ok := c.Client.(*rpc.Client)
+	if !ok {
+		log.Errorw("transfer *rpc.Client fail")
+		return errors.New("tranfer to rpc.Client fail")
 	}
 
 	rpcCall := client.Go(serviceMethod, args, reply, nil)
@@ -66,7 +56,7 @@ func (rp *RpcPool) call(ctx context.Context, serviceMethod string, args interfac
 	timeoutCtx := ctx
 	var cancel context.CancelFunc
 	if nil == timeoutCtx {
-		timeoutCtx, cancel = context.WithTimeout(context.Background(), rp.o.ReadTimeout)
+		timeoutCtx, cancel = context.WithTimeout(context.Background(), rp.o.ReadTimeout+rp.o.WriteTimeout)
 	}
 
 	select {
@@ -83,17 +73,17 @@ func (rp *RpcPool) call(ctx context.Context, serviceMethod string, args interfac
 	if nil != err {
 		_, ok := err.(rpc.ServerError)
 		if !ok {
-			rp.Put(client, jkpool.BAD)
+			rp.pool.Put(c, jkpool.BAD)
 		} else {
-			rp.Put(client, jkpool.GOOD) // 服务端返回的错误说明连接还是正常的，不需要尝试释放连接
+			rp.pool.Put(c, jkpool.GOOD) // 服务端返回的错误说明连接还是正常的，不需要尝试释放连接
 			log.Infow("ServerError", "err", err)
 		}
 
-		log.Errorw("client.Call fail", "method", serviceMethod, "error", err)
+		// log.Errorw("client.Call fail", "method", serviceMethod, "error", err)
 		return err
 	}
 
-	rp.Put(client, jkpool.GOOD)
+	rp.pool.Put(c, jkpool.GOOD)
 
 	return nil
 }
@@ -148,7 +138,7 @@ func (rp *RpcPool) GoCallWithContext(ctx context.Context, serviceMethod string, 
 }
 
 func (rp *RpcPool) Close() {
-	log.Infow("RpcPool.Close")
+	// log.Infow("RpcPool.Close")
 	rp.pool.Close()
 }
 
@@ -160,10 +150,6 @@ func (rp *RpcPool) GetConn() (conn net.Conn, err error) {
 	return rp.pool.GetConn()
 }
 
-func (rp *RpcPool) Get() (client *rpc.Client, err error) {
-	return rp.get_client()
-}
-
-func (rp *RpcPool) Put(client *rpc.Client, good bool) error {
-	return rp.pool.Put(client, good)
+func (rp *RpcPool) GetPool() *jkpool.Pool {
+	return rp.pool
 }

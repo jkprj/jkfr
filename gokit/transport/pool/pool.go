@@ -5,6 +5,7 @@ import (
 	"math"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -13,484 +14,705 @@ const (
 	GOOD = true
 )
 
-type poolClient struct {
-	client PoolClient
-	conn   net.Conn
-	tm     time.Time
-	ref    int32
+const (
+	TRUE  = 1
+	FALSE = 0
+)
+
+var tag uint64
+
+func min(num1, num2 int) int {
+
+	if num1 <= num2 {
+		return num1
+	}
+
+	return num2
 }
 
-type Pool struct {
-	mapClients map[PoolClient]*poolClient
+type client struct {
+	Client PoolClient
+	o      *Options
+	conn   net.Conn
 
-	liIdleClients  *list.List
-	mapIdleClients map[PoolClient]*list.Element
+	connTM time.Time
+	reqTM  time.Time
 
-	liIngClients  *list.List
-	mapIngClients map[PoolClient]*list.Element
+	tag      uint64
+	ref      int64
+	index    int
+	bDestroy bool
 
-	liRecoverableClients  *list.List
-	mapRecoverableClients map[PoolClient]*list.Element
+	mt sync.RWMutex
 
-	bClose      bool
-	initing     bool
-	valid_count int
-	createing   int32
+	err error
+}
 
-	mtPool sync.Mutex
+func new_client(o *Options, index int) (c *client) {
+
+	c = new(client)
+	c.tag = atomic.AddUint64(&tag, 1)
+	c.o = o
+	c.index = index
+
+	return c
+}
+
+func (c *client) IsClose() (isClose bool) {
+
+	c.mt.RLock()
+	isClose = nil == c.conn
+	c.mt.RUnlock()
+
+	return isClose
+}
+
+func (c *client) IsIdleTimeOut() bool {
+	return time.Now().Sub(c.reqTM) > c.o.IdleTimeout
+}
+
+func (c *client) Connect() (bNewConn bool, err error) {
+
+	c.mt.RLock()
+	if c.bDestroy {
+		c.mt.RUnlock()
+		return false, ErrClosed
+	}
+	if nil != c.conn {
+		c.mt.RUnlock()
+		return false, nil
+	}
+	c.mt.RUnlock()
+
+	c.mt.Lock()
+	defer c.mt.Unlock()
+
+	if nil != c.conn {
+		return false, nil
+	}
+
+	if c.bDestroy {
+		return false, ErrClosed
+	}
+
+	if time.Now().Sub(c.connTM) < time.Second { // 每秒只能发起一次连接请求
+		return false, c.err
+	}
+
+	c.connTM = time.Now()
+
+	c.Client, c.conn, c.err = c.o.Factory(c.o)
+	if nil != c.err {
+		return false, c.err
+	}
+
+	c.reqTM = time.Now()
+
+	return true, nil
+}
+func (c *client) AddRef(delta int64) {
+	atomic.AddInt64(&c.ref, delta)
+}
+
+func (c *client) Ref() int64 {
+	return atomic.LoadInt64(&c.ref)
+}
+
+func (c *client) Destroy() (err error) {
+
+	c.mt.Lock()
+	c.bDestroy = true
+	c.mt.Unlock()
+
+	return c.Close()
+}
+
+func (c *client) Close() (err error) {
+
+	c.mt.Lock()
+
+	if nil != c.conn {
+		err = c.Client.Close()
+	}
+
+	c.conn = nil
+
+	c.mt.Unlock()
+
+	return err
+}
+
+// 待回收列表——延迟异步回收client，避免close阻塞影响请求
+type recycle struct {
+	liClients  *list.List
+	mapClients map[uint64]*list.Element
+	mtClients  sync.RWMutex
+	chClient   chan int
+	chExit     chan int
 
 	o *Options
 }
 
-func NewPool(o *Options) (*Pool, error) {
+func new_recycle(o *Options) *recycle {
+	r := new(recycle)
+	r.liClients = list.New()
+	r.mapClients = make(map[uint64]*list.Element)
+	r.chClient = make(chan int, min(o.MaxCap*10, 2000))
+	r.chExit = make(chan int)
+	r.o = o
+
+	go r.loop_recycle_clients()
+
+	return r
+}
+
+func (r *recycle) close() {
+
+	r.chExit <- 1
+
+	r.mtClients.Lock()
+
+	for _, emClient := range r.mapClients {
+		c := emClient.Value.(*client)
+		c.Close()
+	}
+
+	r.mtClients.Unlock()
+}
+
+func (r *recycle) find(tag uint64) (c *client, ok bool) {
+
+	r.mtClients.RLock()
+	em, ok := r.mapClients[tag]
+	if ok {
+		c = em.Value.(*client)
+	}
+
+	r.mtClients.RUnlock()
+
+	return c, ok
+}
+
+func (r *recycle) push(c *client) {
+
+	if nil == c || nil == c.Client {
+		return
+	}
+
+	r.mtClients.Lock()
+
+	emClient, ok := r.mapClients[c.tag]
+	if !ok {
+
+		emClient = r.liClients.PushBack(c)
+		r.mapClients[c.tag] = emClient
+
+		select {
+		case r.chClient <- 1:
+		default:
+			// 回收队列已满就先删除最先入队的
+			emClient = r.liClients.Front()
+			if nil != emClient {
+				cc := emClient.Value.(*client)
+				r.liClients.Remove(emClient)
+				delete(r.mapClients, cc.tag)
+				cc.Close()
+			}
+		}
+	}
+
+	r.mtClients.Unlock()
+}
+
+func (r *recycle) remove(c *client) {
+
+	if nil == c || nil == c.Client {
+		return
+	}
+
+	r.mtClients.Lock()
+
+	emClient, ok := r.mapClients[c.tag]
+	if ok {
+		r.liClients.Remove(emClient)
+		delete(r.mapClients, c.tag)
+	}
+
+	r.mtClients.Unlock()
+}
+
+func (r *recycle) loop_recycle_clients() {
+
+	timer := time.NewTicker(time.Second)
+	defer timer.Stop()
+
+	for {
+		select {
+		case <-r.chExit:
+			return
+		case <-r.chClient:
+			r.mtClients.RLock()
+			if r.liClients.Len() <= r.o.MaxCap {
+				r.mtClients.RUnlock()
+				continue
+			}
+			r.mtClients.RUnlock()
+		case <-timer.C:
+		}
+
+		for {
+			c := r.get_one_client()
+			if nil != c {
+				r.remove(c)
+				c.Close()
+			} else {
+				break
+			}
+		}
+
+	}
+}
+
+func (r *recycle) get_one_client() *client {
+
+	r.mtClients.RLock()
+	defer r.mtClients.RUnlock()
+
+	if 0 == r.liClients.Len() {
+		return nil
+	}
+
+	for _, em := range r.mapClients {
+		c := em.Value.(*client)
+		if 0 >= c.Ref() ||
+			(0 < c.Ref() && time.Now().Sub(c.reqTM) > (r.o.ReadTimeout+r.o.WriteTimeout)) { // 在ref大于0时，判断是否读写超时，超时则关闭
+			return c
+		}
+	}
+
+	if r.liClients.Len() > r.o.MaxCap {
+		emClient := r.liClients.Front()
+		return emClient.Value.(*client)
+	}
+
+	return nil
+}
+
+type clients struct {
+	cs        []*client
+	pc2c      map[uint64]*client
+	mtClients sync.RWMutex
+
+	index      uint64
+	initting   int32
+	chIdleExit chan int
+
+	recycle *recycle
+
+	o *Options
+}
+
+func new_clients(o *Options) (cs *clients) {
+	cs = new(clients)
+	cs.pc2c = make(map[uint64]*client)
+	cs.chIdleExit = make(chan int)
+	cs.recycle = new_recycle(o)
+	cs.o = o
+
+	cs.cs = make([]*client, cs.o.MaxCap)
+	for i := 0; i < len(cs.cs); i++ {
+		cs.cs[i] = new_client(o, i)
+	}
+
+	go cs.loop_remove_idle_time_out_client()
+
+	return cs
+}
+
+func (cs *clients) init_clients() (err error) {
+
+	if !atomic.CompareAndSwapInt32(&cs.initting, 0, 1) {
+		return nil
+	}
+
+	var c *client
+
+	for i := 0; i < cs.o.InitCap; i++ {
+
+		bNewConn, err := func() (bool, error) {
+
+			cs.mtClients.RLock()
+			defer cs.mtClients.RUnlock()
+
+			c = cs.cs[i]
+
+			if !c.IsClose() {
+				return false, nil
+			}
+
+			return c.Connect()
+		}()
+
+		if nil != err {
+			return err
+		}
+
+		if bNewConn {
+			cs.push(c)
+		}
+	}
+
+	atomic.StoreInt32(&cs.initting, 0)
+
+	return err
+}
+
+func (cs *clients) get() (c *client, err error) {
+
+	if 100 >= cs.o.MaxCap {
+		c = cs.min_get()
+	} else {
+		c = cs.round_get()
+	}
+
+	bNewConn, err := c.Connect()
+	if nil != err {
+		c := cs.get_one_valid_client() // connect失败就尝试从已有连接中取一个连接
+		if nil == c {
+			return nil, err
+		}
+	}
+
+	if bNewConn {
+		cs.push(c)
+	}
+
+	return c, nil
+}
+func (cs *clients) min_get() (c *client) {
+
+	cs.mtClients.RLock()
+
+	// 优先获取initcap区域内的client
+	for i := 0; i < cs.o.InitCap; i++ {
+		if 0 >= cs.cs[i].Ref() {
+			c = cs.cs[i]
+			break
+		}
+	}
+
+	if nil == c {
+		var minRef int64 = math.MaxInt64
+
+		for i := 0; i < cs.o.MaxCap; i++ {
+			if minRef > cs.cs[i].Ref() {
+				minRef = cs.cs[i].Ref()
+				c = cs.cs[i]
+			}
+		}
+	}
+
+	cs.mtClients.RUnlock()
+
+	return c
+}
+
+func (cs *clients) round_get() (c *client) {
+
+	cs.mtClients.RLock()
+
+	// 优先获取initcap区域内的client
+	for i := 0; i < cs.o.InitCap; i++ {
+		if 0 >= cs.cs[i].Ref() {
+			c = cs.cs[i]
+			break
+		}
+	}
+
+	if nil == c {
+		index := cs.index % uint64(len(cs.cs))
+		c = cs.cs[index]
+		cs.index++
+	}
+
+	cs.mtClients.RUnlock()
+
+	return c
+}
+
+func (cs *clients) get_one_valid_client() (c *client) {
+
+	cs.mtClients.RLock()
+
+	for _, c = range cs.pc2c { // 如果connect失败就从已有正常连接池中取一个
+		break
+	}
+
+	cs.mtClients.RUnlock()
+
+	return c
+}
+
+func (cs *clients) push(c *client) {
+
+	cs.mtClients.Lock()
+	cs.pc2c[c.tag] = c
+	cs.mtClients.Unlock()
+}
+
+func (cs *clients) remove(tag uint64) {
+
+	cs.mtClients.Lock()
+	c, ok := cs.pc2c[tag]
+	if ok {
+		delete(cs.pc2c, tag)
+		cs.cs[c.index] = new_client(cs.o, c.index)
+	}
+	cs.mtClients.Unlock()
+}
+
+func (cs *clients) find(tag uint64) (c *client, ok bool) {
+
+	cs.mtClients.RLock()
+	c, ok = cs.pc2c[tag]
+	if !ok {
+		c, ok = cs.recycle.find(tag)
+	}
+	cs.mtClients.RUnlock()
+
+	return c, ok
+}
+
+func (cs *clients) move_recycle(tag uint64) (c *client) {
+
+	cs.mtClients.Lock()
+
+	c, ok := cs.pc2c[tag]
+	if ok {
+		delete(cs.pc2c, tag)
+		cs.cs[c.index] = new_client(cs.o, c.index)
+
+		cs.recycle.push(c)
+	} else {
+		c, _ = cs.recycle.find(tag)
+	}
+	cs.mtClients.Unlock()
+
+	return c
+}
+
+func (cs *clients) loop_remove_idle_time_out_client() {
+
+	timer := time.NewTicker(time.Second)
+	defer timer.Stop()
+
+	pre := time.Now()
+
+	for {
+		select {
+		case <-cs.chIdleExit:
+			return
+		case <-timer.C:
+		}
+
+		go cs.init_clients()
+
+		if time.Now().Sub(pre) < time.Minute {
+			continue
+		}
+
+		pre = time.Now()
+
+		cs.clear_idle_time_out_client()
+	}
+}
+
+func (cs *clients) clear_idle_time_out_client() {
+
+	for i := cs.o.InitCap; i < cs.o.MaxCap; i++ {
+
+		if cs.valid_count() <= cs.o.InitCap { // 保留最少连接数
+			return
+		}
+
+		cs.remove_client_if_idle_time_out(i)
+	}
+}
+
+func (cs *clients) remove_client_if_idle_time_out(index int) {
+
+	cs.mtClients.Lock()
+	defer cs.mtClients.Unlock()
+
+	c := cs.cs[index]
+
+	if c.IsClose() ||
+		(0 < c.Ref() && time.Now().Sub(c.reqTM) <= (cs.o.ReadTimeout+cs.o.WriteTimeout)) || // 在ref大于0时，判断是否读写超时，超时则关闭
+		!c.IsIdleTimeOut() {
+		return
+	}
+
+	cs.cs[index] = new_client(cs.o, index)
+	delete(cs.pc2c, c.tag)
+
+	cs.recycle.push(c) // 放到待回收列表，延迟close
+}
+
+func (cs *clients) valid_count() (count int) {
+
+	cs.mtClients.RLock()
+	count = len(cs.pc2c)
+	cs.mtClients.RUnlock()
+
+	return count
+}
+
+func (cs *clients) close() (err error) {
+
+	cs.chIdleExit <- 1
+
+	cs.mtClients.Lock()
+
+	for _, c := range cs.cs {
+		err = c.Destroy()
+		if nil != err {
+			break
+		}
+	}
+	cs.pc2c = make(map[uint64]*client)
+
+	cs.mtClients.Unlock()
+
+	if nil != cs.recycle {
+		cs.recycle.close()
+	}
+
+	return err
+}
+
+type Pool struct {
+	clients *clients
+
+	o *Options
+
+	mtClose sync.RWMutex
+	isClose int32
+}
+
+func NewPool(o *Options) (pool *Pool, err error) {
 
 	if o.InitCap < 1 {
 		o.InitCap = 1
 	}
 
 	if o.MaxCap < o.InitCap {
-		o.MaxCap = int(math.Max(math.Min(float64(o.InitCap*10), 200), float64(o.InitCap)))
+		o.MaxCap = int(math.Max(math.Min(float64(o.InitCap*10), 32), float64(o.InitCap)))
 	}
 
-	if err := o.validate(); err != nil {
+	if err = o.validate(); err != nil {
 		return nil, err
 	}
 
-	pool := &Pool{
-		mapClients:            map[PoolClient]*poolClient{},
-		liIdleClients:         list.New(),
-		mapIdleClients:        map[PoolClient]*list.Element{},
-		liIngClients:          list.New(),
-		mapIngClients:         map[PoolClient]*list.Element{},
-		liRecoverableClients:  list.New(),
-		mapRecoverableClients: map[PoolClient]*list.Element{},
-		o:                     o,
-	}
+	pool = &Pool{o: o}
 
-	//init make conns
-	err := pool.init_clients()
+	pool.clients = new_clients(o)
+	err = pool.clients.init_clients()
 	if nil != err {
 		pool.Close()
 		return nil, err
 	}
 
-	go pool.loop_remove_idle_time_out_client()
-
 	return pool, nil
 }
 
-func (pl *Pool) init_clients() error {
+func (pl *Pool) Get() (c *client, err error) {
 
-	for i := 0; i < pl.o.InitCap && pl.valid_count < pl.o.MaxCap; i++ {
-		_, err := pl.create_client(false)
-		if nil != err {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (pl *Pool) Get() (plc PoolClient, err error) {
-
-	pl.mtPool.Lock()
-
-	if pl.bClose {
-		pl.mtPool.Unlock()
+	if !pl.mtClose.TryRLock() {
 		return nil, ErrClosed
 	}
 
-	pc, err := pl.get()
+	c, err = pl.clients.get()
 	if nil != err {
-		pl.mtPool.Unlock()
+		pl.mtClose.RUnlock()
 		return nil, err
-
 	}
 
-	pc.tm = time.Now()
-	pc.ref++
+	c.AddRef(1)
+	c.reqTM = time.Now()
 
-	pl.mtPool.Unlock()
+	pl.mtClose.RUnlock()
 
-	return pc.client, err
+	return c, nil
 }
 
 func (pl *Pool) GetConn() (conn net.Conn, err error) {
 
-	pl.mtPool.Lock()
-
-	if pl.bClose {
-		pl.mtPool.Unlock()
+	if !pl.mtClose.TryRLock() {
 		return nil, ErrClosed
 	}
+	defer pl.mtClose.RUnlock()
 
-	pc, err := pl.get()
-	if nil != err {
-		pl.mtPool.Unlock()
-		return nil, err
+	c := pl.clients.get_one_valid_client()
+	if nil != c {
+		return nil, ErrNotFound
 	}
 
-	pc.ref++
-	pl.put_good(pc.client)
-
-	pl.mtPool.Unlock()
-
-	return pc.conn, nil
+	return c.conn, nil
 }
 
-func (pl *Pool) get() (pc *poolClient, err error) {
+func (pl *Pool) Put(c *client, good bool) (err error) {
 
-	// 如果从idle中获取的就先不用创建，如果从ing获取到的而且vali-count没有超过max，就异步创建，先复用已有的client
-	// 如果valid-count为0，就同步创建
-
-	pc, bIdle := pl.get_from_created()
-	if nil == pc {
-		pc, err = pl.create_client(true)
-		if nil != err {
-			return nil, err
-		}
-	} else if false == bIdle {
-		if int(pl.createing) < pl.o.MaxCap-pl.valid_count { //同一时间的创建协程不能超过max - valid
-			pl.createing++
-			go func() {
-				pl.create_client(false)
-				pl.createing--
-			}()
-		}
-
-	}
-
-	return pc, nil
-}
-
-func (pl *Pool) get_from_created() (pc *poolClient, bIdle bool) {
-
-	pc = pl.pop_idle_client()
-	if nil != pc {
-		pl.push_ing_client(pc)
-		return pc, true
-	}
-
-	pc = pl.pop_ing_client()
-	if nil != pc {
-		return pc, false
-	}
-
-	return nil, false
-}
-
-func (pl *Pool) create_client(ing bool) (*poolClient, error) {
-
-	if pl.valid_count >= pl.o.MaxCap {
-		return nil, ErrMax
-	}
-
-	plc, conn, err := pl.o.Factory(pl.o)
-	if nil != err {
-		return nil, err
-	}
-
-	if false == ing {
-		pl.mtPool.Lock()
-	}
-
-	pc := &poolClient{client: plc, conn: conn, tm: time.Now()}
-	pl.mapClients[pc.client] = pc
-	pl.valid_count++
-
-	if ing {
-		pl.push_ing_client(pc)
-	} else {
-		pl.push_idle_client(pc)
-		pl.mtPool.Unlock()
-	}
-
-	return pc, nil
-}
-
-func (pl *Pool) close_client(pc *poolClient) error {
-
-	delete(pl.mapClients, pc.client)
-
-	pc.conn = nil
-
-	return pc.client.Close()
-}
-
-func (pl *Pool) push_client(liClients *list.List, mapClients map[PoolClient]*list.Element, pc *poolClient) {
-
-	emClient, ok := mapClients[pc.client]
-	if !ok {
-		emClient = liClients.PushBack(pc)
-		mapClients[pc.client] = emClient
-	}
-}
-
-func (pl *Pool) remove_client(liClients *list.List, mapClients map[PoolClient]*list.Element, pcl PoolClient) *poolClient {
-
-	emClient, ok := mapClients[pcl]
-	if !ok {
+	if nil == c {
 		return nil
 	}
-	liClients.Remove(emClient)
-	delete(mapClients, pcl)
 
-	return emClient.Value.(*poolClient)
-}
-
-func (pl *Pool) pop_idle_client() *poolClient {
-
-	tmp := pl.liIdleClients.Front()
-	if nil != tmp {
-
-		pl.liIdleClients.Remove(tmp)
-		pc := tmp.Value.(*poolClient)
-		delete(pl.mapIdleClients, pc.client)
-
-		return pc
+	if !pl.mtClose.TryRLock() {
+		return ErrClosed
 	}
 
-	return nil
-}
+	c.AddRef(-1)
 
-func (pl *Pool) push_idle_client(pc *poolClient) {
-	pl.push_client(pl.liIdleClients, pl.mapIdleClients, pc)
-}
-
-func (pl *Pool) remove_idle_client(pcl PoolClient) *poolClient {
-	return pl.remove_client(pl.liIdleClients, pl.mapIdleClients, pcl)
-}
-
-func (pl *Pool) pop_ing_client() *poolClient {
-
-	tmp := pl.liIngClients.Front()
-	if nil != tmp {
-		pl.liIngClients.MoveToBack(tmp)
-		return tmp.Value.(*poolClient)
+	if good {
+		err = pl.put_good(c)
+	} else {
+		err = pl.put_bad(c)
 	}
 
-	return nil
-}
-
-func (pl *Pool) push_ing_client(pc *poolClient) {
-	pl.push_client(pl.liIngClients, pl.mapIngClients, pc)
-}
-
-func (pl *Pool) remove_ing_client(pcl PoolClient) *poolClient {
-	return pl.remove_client(pl.liIngClients, pl.mapIngClients, pcl)
-}
-
-func (pl *Pool) recoverable_clients_count() int {
-
-	count := pl.liRecoverableClients.Len()
-
-	return count
-}
-
-func (pl *Pool) push_recoverable_client(pc *poolClient) {
-
-	pl.push_client(pl.liRecoverableClients, pl.mapRecoverableClients, pc)
-
-	for pl.o.MaxCap <= pl.liRecoverableClients.Len() { // recoverables最多保留max-cap个
-
-		emClient := pl.liRecoverableClients.Front()
-		pl.liRecoverableClients.Remove(emClient)
-		pc := emClient.Value.(*poolClient)
-		delete(pl.mapRecoverableClients, pc.client)
-
-		pl.close_client(pc)
-	}
-}
-
-func (pl *Pool) remove_recoverable_client(pcl PoolClient) *poolClient {
-	return pl.remove_client(pl.liRecoverableClients, pl.mapRecoverableClients, pcl)
-}
-
-func (pl *Pool) Put(plc PoolClient, good bool) (err error) {
-
-	pl.mtPool.Lock()
-
-	if pl.bClose {
-		err = plc.Close()
-		pl.mtPool.Unlock()
-		return err
-	}
-
-	err = pl.put(plc, good)
-
-	pl.mtPool.Unlock()
+	pl.mtClose.RUnlock()
 
 	return err
 }
 
-func (pl *Pool) put(plc PoolClient, good bool) error {
-	if good {
-		return pl.put_good(plc)
-	} else {
-		return pl.put_bad(plc)
-	}
-}
-
-func (pl *Pool) put_bad(plc PoolClient) error {
-
-	pc := pl.remove_ing_client(plc)
-	if nil == pc { // 可能前面已经放到recoverable中，只是ref还不为0
-		pc = pl.mapClients[plc]
-	} else {
-		pl.valid_count--
-	}
-
-	if nil != pc {
-
-		pc.ref--
-
-		if pc.ref > 0 {
-			pl.push_recoverable_client(pc)
-		} else {
-			pl.close_client(pc)
-		}
-	}
-
+func (pl *Pool) put_good(c *client) error {
 	return nil
 }
 
-func (pl *Pool) put_good(plc PoolClient) error {
-
-	pc := pl.remove_recoverable_client(plc)
-	if nil == pc {
-		pc = pl.mapClients[plc]
-		if nil != pc {
-			pc.ref--
-		}
-	} else {
-
-		pc.ref--
-
-		if pl.valid_count >= pl.o.MaxCap { // 如果valid-count大于max，需要回收掉
-			if pc.ref > 0 {
-				pl.push_recoverable_client(pc) // 还有引用，就先放回recoverable
-			} else {
-				return pl.close_client(pc)
-			}
-
-			return nil
-
-		} else { //重新放回valid列表
-			pl.valid_count++
-		}
-	}
-
-	if nil != pc {
-
-		pc.tm = time.Now()
-
-		if pc.ref > 0 {
-			pl.push_ing_client(pc)
-		} else {
-			pl.remove_ing_client(plc)
-			pl.push_idle_client(pc)
-		}
-	}
-
+func (pl *Pool) put_bad(c *client) error {
+	pl.clients.move_recycle(c.tag)
 	return nil
 }
 
 func (pl *Pool) Close() error {
 
-	pl.mtPool.Lock()
-	defer pl.mtPool.Unlock()
-
-	pl.bClose = true
-	pl.valid_count = 0
-
-	for client := range pl.mapClients {
-		client.Close()
+	if !atomic.CompareAndSwapInt32(&pl.isClose, 0, 1) { // 避免重入
+		return nil
 	}
 
-	pl.mapClients = nil
-	pl.liIdleClients = nil
-	pl.liIngClients = nil
-	pl.mapIngClients = nil
-	pl.liRecoverableClients = nil
-	pl.mapRecoverableClients = nil
+	pl.mtClose.Lock()
+
+	if nil != pl.clients {
+		pl.clients.close()
+	}
 
 	return nil
 }
 
 func (pl *Pool) ValidCount() int {
 
-	pl.mtPool.Lock()
-
-	count := pl.valid_count
-
-	if 0 >= count && false == pl.initing && false == pl.bClose {
-		pl.initing = true
-		go func() {
-			pl.init_clients()
-			pl.initing = false
-		}()
+	if !pl.mtClose.TryRLock() { // closed
+		return 0
 	}
+	pl.mtClose.RUnlock()
 
-	pl.mtPool.Unlock()
-
-	return count
-}
-
-func (pl *Pool) try_init_clients() {
-	pl.ValidCount()
-}
-
-func (pl *Pool) loop_remove_idle_time_out_client() {
-
-	pre := time.Now()
-
-	for {
-		time.Sleep(time.Second)
-		if pl.bClose {
-			break
-		}
-
-		pl.try_init_clients()
-
-		now := time.Now()
-		if now.Sub(pre) < time.Minute {
-			continue
-		}
-
-		pre = now
-
-		pl.mtPool.Lock()
-
-		if pl.bClose {
-			pl.mtPool.Unlock()
-			break
-		}
-
-		pl.remove_idle_time_out_client(now)
-
-		pl.mtPool.Unlock()
-	}
-}
-
-func (pl *Pool) remove_idle_time_out_client(now time.Time) {
-
-	if pl.valid_count <= pl.o.InitCap {
-		return
-	}
-
-	for plc, pc := range pl.mapClients {
-
-		if now.Sub(pc.tm) < pl.o.IdleTimeout {
-			continue
-		}
-
-		if nil != pl.remove_idle_client(plc) || nil != pl.remove_ing_client(plc) {
-			pl.valid_count--
-		} else {
-			pl.remove_recoverable_client(plc)
-		}
-
-		delete(pl.mapClients, plc)
-		plc.Close()
-	}
+	return pl.clients.valid_count()
 }

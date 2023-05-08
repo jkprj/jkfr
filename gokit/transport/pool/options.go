@@ -39,7 +39,7 @@ type Options struct {
 	ReadTimeout  time.Duration
 	WriteTimeout time.Duration
 
-	Factory ClientFatory
+	Factory ClientFatory `json:"-"`
 }
 
 // NewOptions returns a new newOptions instance with sane defaults.

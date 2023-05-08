@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"google.golang.org/grpc/codes"
-
 	"google.golang.org/grpc/status"
 
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
@@ -30,43 +29,34 @@ func NewGRPCPool(o *jkpool.Options) (p *GRPCPool, err error) {
 	return p, nil
 }
 
-func (rp *GRPCPool) get_client() (*ClientHandle, error) {
-	plclient, err := rp.pool.Get()
-	if nil != err {
-		return nil, err
-	}
-
-	client, ok := plclient.(*ClientHandle)
-	if !ok {
-		return nil, errors.New("tranfer to ClientHandle fail")
-	}
-
-	return client, nil
-}
-
 func (rp *GRPCPool) CallWithContext(ctx context.Context, action string, request interface{}) (response interface{}, err error) {
 
-	client, err := rp.get_client()
+	c, err := rp.pool.Get()
 	if nil != err {
 		return nil, err
+	}
+
+	client, ok := c.Client.(*ClientHandle)
+	if !ok {
+		return nil, errors.New("tranfer to ClientHandle fail")
 	}
 
 	resp, err := client.call(ctx, action, request)
 	if nil != err {
 		st, ok := status.FromError(err)
-		if ok && (codes.Canceled == st.Code() ||
+		if ok && (codes.OK == st.Code() ||
 			codes.Unknown == st.Code() ||
 			codes.Unimplemented == st.Code()) {
 
-			rp.Put(client, jkpool.GOOD) // 非网络原因导致的失败不回收
+			rp.pool.Put(c, jkpool.GOOD) // 非网络原因导致的失败不回收
 		} else {
-			rp.Put(client, jkpool.BAD)
+			rp.pool.Put(c, jkpool.BAD)
 		}
 
 		return nil, err
 	}
 
-	rp.Put(client, jkpool.GOOD)
+	rp.pool.Put(c, jkpool.GOOD)
 
 	return resp, nil
 }
@@ -75,14 +65,14 @@ func (rp *GRPCPool) Call(action string, req interface{}) (rsp interface{}, err e
 	return rp.CallWithContext(context.Background(), action, req)
 }
 
+func (rp *GRPCPool) IsConnected() bool {
+	return 0 < rp.pool.ValidCount()
+}
+
 func (rp *GRPCPool) Close() {
 	rp.pool.Close()
 }
 
-func (rp *GRPCPool) Get() (client *ClientHandle, err error) {
-	return rp.get_client()
-}
-
-func (rp *GRPCPool) Put(client *ClientHandle, good bool) error {
-	return rp.pool.Put(client, good)
+func (rp *GRPCPool) GetPool() *jkpool.Pool {
+	return rp.pool
 }

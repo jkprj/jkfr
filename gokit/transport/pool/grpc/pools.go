@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"net/rpc"
 	"sync"
@@ -12,9 +13,9 @@ import (
 
 	"google.golang.org/grpc"
 
-	ut "github.com/jkprj/jkfr/gokit/transport"
+	jktran "github.com/jkprj/jkfr/gokit/transport"
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
-	urand "github.com/jkprj/jkfr/gokit/utils/rand"
+	jkrand "github.com/jkprj/jkfr/gokit/utils/rand"
 	"github.com/jkprj/jkfr/log"
 )
 
@@ -81,7 +82,7 @@ func NewGRPCPools(addrs []string, opt *jkpool.Options) (*GRPCPools, error) {
 	p.opt = opt
 	p.SetRetryTimes(3)
 	p.SetIdleTimeOut(600)
-	p.SetStrategy(ut.STRATEGY_ROUND)
+	p.SetStrategy(jktran.STRATEGY_LEAST)
 	p.SetRetryIntervalMS(1000)
 
 	if nil != addrs {
@@ -147,7 +148,7 @@ func (pls *GRPCPools) call_with_func(callFunc func() (resp interface{}, err erro
 		// log.Errorw("Call fail", "retryTimes", retry, "error", err)
 
 		if nil != lastErr {
-			lastErr = fmt.Errorf("%s; %s", lastErr.Error(), retry, err.Error())
+			lastErr = fmt.Errorf("%s; %s", lastErr.Error(), err.Error())
 		} else {
 			lastErr = err
 		}
@@ -250,7 +251,7 @@ func (pls *GRPCPools) Close() {
 	pls.mtNew.Lock()
 	defer pls.mtNew.Unlock()
 
-	log.Infow("GRPCPools.Close")
+	// log.Infow("GRPCPools.Close")
 
 	pls.close()
 }
@@ -262,7 +263,7 @@ func (pls *GRPCPools) close() {
 
 	pls.isClosed = true
 
-	log.Infow("GRPCPools.close")
+	// log.Infow("GRPCPools.close")
 
 	for _, pl := range pls.pools {
 		pl.pl.Close()
@@ -313,21 +314,21 @@ func (pls *GRPCPools) SetStrategy(strategy string) {
 
 	pls.strategy = strategy
 
-	if ut.STRATEGY_RANDOM == strategy {
+	if jktran.STRATEGY_RANDOM == strategy {
 		// pls.random = rand.New(rand.NewSource(time.Now().UnixNano()))      // golang提供的source不是线程安全的
-		pls.random = rand.New(urand.NewSource(time.Now().UnixNano()))
+		pls.random = rand.New(jkrand.NewSource(time.Now().UnixNano()))
 		pls.get_pool = func() *stpool {
 			return pls.random_get()
 		}
 
-	} else if ut.STRATEGY_LEAST == strategy {
-		pls.get_pool = func() *stpool {
-			return pls.min_call_get()
-		}
-	} else {
-		pls.strategy = ut.STRATEGY_ROUND
+	} else if jktran.STRATEGY_ROUND == strategy {
 		pls.get_pool = func() *stpool {
 			return pls.roll_get()
+		}
+	} else {
+		pls.strategy = jktran.STRATEGY_LEAST
+		pls.get_pool = func() *stpool {
+			return pls.least_get()
 		}
 	}
 }
@@ -426,26 +427,28 @@ func (pls *GRPCPools) random_get() *stpool {
 	return pls.get_index_ex(pls.index)
 }
 
-func (pls *GRPCPools) min_call_get() *stpool {
+func (pls *GRPCPools) least_get() *stpool {
 
-	var min_pl *stpool
-	var min int64 = 1000000000000
+	var index uint32 = 0
+	var min int64 = math.MaxInt64
 
 	pls.mtPool.RLock()
 
-	for _, pl := range pls.pools {
+	for i, pl := range pls.pools {
 		if min > pl.call {
 			min = pl.call
-			min_pl = pl
+			index = uint32(i)
 		}
 		if 0 == min {
 			break
 		}
 	}
 
+	pls.index = uint32(index)
+
 	pls.mtPool.RUnlock()
 
-	return min_pl
+	return pls.get_index_ex(pls.index)
 }
 
 func (pls *GRPCPools) getex(addr string) (*stpool, error) {
@@ -483,8 +486,24 @@ func (pls *GRPCPools) get_index_ex(index uint32) *stpool {
 	pls.mtPool.RLock()
 
 	length := len(pls.pools)
-	if 0 < length {
-		pl = pls.pools[index%uint32(length)]
+	if 0 >= length {
+		return nil
+	}
+
+	pl = pls.pools[index%uint32(length)]
+
+	if false == pl.pl.IsConnected() { // 该连接池没有可用连接，就遍历获取一个有连接的连接池
+		for i := 0; i < length; i++ {
+
+			tmpIndex := (index + uint32(i)) % uint32(length)
+			tmp := pls.pools[tmpIndex]
+
+			if tmp.pl.IsConnected() {
+				pl = tmp
+				pls.index = tmpIndex
+				break
+			}
+		}
 	}
 
 	pls.mtPool.RUnlock()

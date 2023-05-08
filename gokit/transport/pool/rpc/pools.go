@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"net"
 	"net/rpc"
@@ -11,9 +12,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	ut "github.com/jkprj/jkfr/gokit/transport"
+	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
-	urand "github.com/jkprj/jkfr/gokit/utils/rand"
+	jkrand "github.com/jkprj/jkfr/gokit/utils/rand"
 	"github.com/jkprj/jkfr/log"
 )
 
@@ -23,7 +24,7 @@ type stpool struct {
 	pl     *RpcPool
 	last   time.Time
 	call   int64
-	static bool // 静态创建的pool不能超时关闭，只有动态创建的pool才嫩超时关闭
+	static bool // 静态创建的pool不能超时关闭，只有动态创建的pool才能超时关闭
 }
 
 type RpcPools struct {
@@ -80,13 +81,13 @@ func NewRpcPools(addrs []string, opt *jkpool.Options) (*RpcPools, error) {
 	p.opt = opt
 	p.SetRetryTimes(3)
 	p.SetIdleTimeOut(24 * 60 * 60)
-	p.SetStrategy(ut.STRATEGY_LEAST)
+	p.SetStrategy(jktrans.STRATEGY_LEAST)
 	p.SetRetryIntervalMS(1000)
 
 	for _, addr := range addrs {
 		_, err := p.get_and_push(addr, opt, true)
 		if nil != err {
-			log.Infow("RpcPools.get_and_push err, to close pool", "err", err.Error())
+			log.Errorw("RpcPools.get_and_push err, to close pool", "err", err.Error())
 			p.Close()
 			return nil, err
 		}
@@ -265,7 +266,7 @@ func (pls *RpcPools) Close() {
 	pls.mtNew.Lock()
 	defer pls.mtNew.Unlock()
 
-	log.Infow("RpcPools.Close")
+	// log.Infow("RpcPools.Close")
 
 	pls.close()
 }
@@ -277,7 +278,7 @@ func (pls *RpcPools) close() {
 
 	pls.isClosed = true
 
-	log.Infow("RpcPools.close")
+	// log.Infow("RpcPools.close")
 
 	for _, pl := range pls.pools {
 		pl.pl.Close()
@@ -328,19 +329,19 @@ func (pls *RpcPools) SetStrategy(strategy string) {
 
 	pls.strategy = strategy
 
-	if ut.STRATEGY_RANDOM == strategy {
+	if jktrans.STRATEGY_RANDOM == pls.strategy {
 		// pls.random = rand.New(rand.NewSource(time.Now().UnixNano()))      // golang提供的source不是线程安全的
-		pls.random = rand.New(urand.NewSource(time.Now().UnixNano()))
+		pls.random = rand.New(jkrand.NewSource(time.Now().UnixNano()))
 		pls.get_pool = func() *stpool {
 			return pls.random_get()
 		}
 
-	} else if ut.STRATEGY_LEAST == strategy {
-		pls.strategy = ut.STRATEGY_ROUND
+	} else if jktrans.STRATEGY_ROUND == pls.strategy {
 		pls.get_pool = func() *stpool {
 			return pls.roll_get()
 		}
 	} else {
+		pls.strategy = jktrans.STRATEGY_LEAST
 		pls.get_pool = func() *stpool {
 			return pls.least_get()
 		}
@@ -443,17 +444,16 @@ func (pls *RpcPools) random_get() *stpool {
 
 func (pls *RpcPools) least_get() *stpool {
 
-	var min int64 = 1000000000000
+	var min int64 = math.MaxInt64
 	var index uint32 = 0
 
 	pls.mtPool.RLock()
 
 	for i, pl := range pls.pools {
 
-		index = uint32(i)
-
 		if min > pl.call {
 			min = pl.call
+			index = uint32(i)
 		}
 		if 0 == min {
 			break
