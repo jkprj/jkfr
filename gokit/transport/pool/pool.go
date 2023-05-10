@@ -653,7 +653,7 @@ func (pl *Pool) GetConn() (conn net.Conn, err error) {
 	defer pl.mtClose.RUnlock()
 
 	c := pl.clients.get_one_valid_client()
-	if nil != c {
+	if nil == c {
 		return nil, ErrNotFound
 	}
 

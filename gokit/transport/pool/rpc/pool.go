@@ -76,7 +76,7 @@ func (rp *RpcPool) call(ctx context.Context, serviceMethod string, args interfac
 			rp.pool.Put(c, jkpool.BAD)
 		} else {
 			rp.pool.Put(c, jkpool.GOOD) // 服务端返回的错误说明连接还是正常的，不需要尝试释放连接
-			log.Infow("ServerError", "err", err)
+			// log.Infow("ServerError", "err", err)
 		}
 
 		// log.Errorw("client.Call fail", "method", serviceMethod, "error", err)
