@@ -60,6 +60,7 @@ type GRPCPools struct {
 	mtNew  sync.RWMutex
 
 	isClosed bool
+	chExit   chan int
 }
 
 func NewDefaultGRPCPools(clientFatory ClientFatory) *GRPCPools {
@@ -79,6 +80,7 @@ func NewGRPCPools(addrs []string, opt *jkpool.Options) (*GRPCPools, error) {
 	p := new(GRPCPools)
 	p.addr2pool = make(map[string]*stpool)
 	p.pools = make([]*stpool, 0, len(addrs))
+	p.chExit = make(chan int)
 	p.opt = opt
 	p.SetRetryTimes(3)
 	p.SetIdleTimeOut(600)
@@ -261,7 +263,13 @@ func (pls *GRPCPools) close() {
 	pls.mtPool.Lock()
 	defer pls.mtPool.Unlock()
 
+	if pls.isClosed {
+		return
+	}
+
 	pls.isClosed = true
+
+	pls.chExit <- 1
 
 	// log.Infow("GRPCPools.close")
 
@@ -544,12 +552,15 @@ func (pls *GRPCPools) get_server_index(svrAddr string) int {
 
 func (pls *GRPCPools) loop_check_idle_time_out_pool() {
 
+	timer := time.NewTicker(time.Minute)
+	defer timer.Stop()
+
 	for {
 
-		time.Sleep(time.Minute)
-
-		if false == pls.isClosed {
-			break
+		select {
+		case <-pls.chExit:
+			return
+		case <-timer.C:
 		}
 
 		if pls.idleTimeOut < time.Minute {

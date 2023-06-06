@@ -133,6 +133,7 @@ func (c *client) Close() (err error) {
 
 	if nil != c.conn {
 		err = c.Client.Close()
+		c.conn.Close()
 	}
 
 	c.conn = nil
@@ -149,6 +150,7 @@ type recycle struct {
 	mtClients  sync.RWMutex
 	chClient   chan int
 	chExit     chan int
+	isClose    bool
 
 	o *Options
 }
@@ -167,6 +169,8 @@ func new_recycle(o *Options) *recycle {
 }
 
 func (r *recycle) close() {
+
+	r.isClose = true
 
 	r.chExit <- 1
 
@@ -200,6 +204,10 @@ func (r *recycle) push(c *client) {
 	}
 
 	r.mtClients.Lock()
+
+	if r.isClose {
+		c.Close()
+	}
 
 	emClient, ok := r.mapClients[c.tag]
 	if !ok {
@@ -305,6 +313,7 @@ type clients struct {
 
 	index      uint64
 	initting   int32
+	isClose    bool
 	chIdleExit chan int
 
 	recycle *recycle
@@ -456,7 +465,13 @@ func (cs *clients) get_one_valid_client() (c *client) {
 func (cs *clients) push(c *client) {
 
 	cs.mtClients.Lock()
-	cs.pc2c[c.tag] = c
+
+	if cs.isClose {
+		c.Close()
+	} else {
+		cs.pc2c[c.tag] = c
+	}
+
 	cs.mtClients.Unlock()
 }
 
@@ -475,7 +490,7 @@ func (cs *clients) find(tag uint64) (c *client, ok bool) {
 
 	cs.mtClients.RLock()
 	c, ok = cs.pc2c[tag]
-	if !ok {
+	if !ok && nil != cs.recycle {
 		c, ok = cs.recycle.find(tag)
 	}
 	cs.mtClients.RUnlock()
@@ -489,13 +504,20 @@ func (cs *clients) move_recycle(tag uint64) (c *client) {
 
 	c, ok := cs.pc2c[tag]
 	if ok {
-		delete(cs.pc2c, tag)
-		cs.cs[c.index] = new_client(cs.o, c.index)
 
-		cs.recycle.push(c)
-	} else {
+		delete(cs.pc2c, tag)
+
+		if nil == cs.recycle {
+			c.Close()
+		} else {
+			cs.cs[c.index] = new_client(cs.o, c.index)
+			cs.recycle.push(c)
+		}
+
+	} else if nil != cs.recycle {
 		c, _ = cs.recycle.find(tag)
 	}
+
 	cs.mtClients.Unlock()
 
 	return c
@@ -552,10 +574,15 @@ func (cs *clients) remove_client_if_idle_time_out(index int) {
 		return
 	}
 
-	cs.cs[index] = new_client(cs.o, index)
-	delete(cs.pc2c, c.tag)
+	if nil != cs.recycle {
+		cs.cs[index] = new_client(cs.o, index)
+		delete(cs.pc2c, c.tag)
 
-	cs.recycle.push(c) // 放到待回收列表，延迟close
+		cs.recycle.push(c) // 放到待回收列表，延迟close
+	} else {
+		c.Close()
+	}
+
 }
 
 func (cs *clients) valid_count() (count int) {
@@ -569,6 +596,8 @@ func (cs *clients) valid_count() (count int) {
 
 func (cs *clients) close() (err error) {
 
+	cs.isClose = true
+
 	cs.chIdleExit <- 1
 
 	cs.mtClients.Lock()
@@ -581,11 +610,12 @@ func (cs *clients) close() (err error) {
 	}
 	cs.pc2c = make(map[uint64]*client)
 
-	cs.mtClients.Unlock()
-
 	if nil != cs.recycle {
 		cs.recycle.close()
 	}
+	cs.recycle = nil
+
+	cs.mtClients.Unlock()
 
 	return err
 }
@@ -667,6 +697,7 @@ func (pl *Pool) Put(c *client, good bool) (err error) {
 	}
 
 	if !pl.mtClose.TryRLock() {
+		c.Close()
 		return ErrClosed
 	}
 
@@ -688,7 +719,9 @@ func (pl *Pool) put_good(c *client) error {
 }
 
 func (pl *Pool) put_bad(c *client) error {
-	pl.clients.move_recycle(c.tag)
+	if nil == pl.clients.move_recycle(c.tag) { // 缓存没找到就直接close
+		c.Close()
+	}
 	return nil
 }
 

@@ -141,11 +141,11 @@ func test_pool() {
 		}(i)
 	}
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Second * 1)
 
-	if !bexit {
-		bexit = true
-	}
+	// if !bexit {
+	// 	bexit = true
+	// }
 
 	// log.Info("aaaaaaaaaaaaaaaaaaa")
 
