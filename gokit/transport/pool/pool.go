@@ -525,7 +525,7 @@ func (cs *clients) move_recycle(tag uint64) (c *client) {
 
 func (cs *clients) loop_remove_idle_time_out_client() {
 
-	timer := time.NewTicker(time.Second)
+	timer := time.NewTicker(time.Minute)
 	defer timer.Stop()
 
 	pre := time.Now()
