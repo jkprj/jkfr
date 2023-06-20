@@ -495,6 +495,7 @@ func (pls *GRPCPools) get_index_ex(index uint32) *stpool {
 
 	length := len(pls.pools)
 	if 0 >= length {
+		pls.mtPool.RUnlock()
 		return nil
 	}
 
@@ -524,6 +525,7 @@ func (pls *GRPCPools) get_index(i int) *stpool {
 	pls.mtPool.RLock()
 
 	if i < len(pls.pools) {
+		pls.mtPool.RUnlock()
 		return pls.pools[i]
 	}
 

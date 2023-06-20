@@ -6,7 +6,7 @@ import (
 
 	"github.com/jkprj/jkfr/prometheus/gauge"
 
-	"github.com/shirou/gopsutil/process"
+	"github.com/shirou/gopsutil/v3/process"
 )
 
 func GetProcess() (process.Process, error) {
