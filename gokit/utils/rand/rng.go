@@ -6,6 +6,7 @@ package rand
 
 import (
 	"math/rand"
+	"sync/atomic"
 )
 
 /*
@@ -182,8 +183,8 @@ var (
 )
 
 type rngSource struct {
-	tap  uint          // index into vec
-	feed uint          // index into vec
+	tap  uint64        // index into vec
+	feed uint64        // index into vec
 	vec  [rngLen]int64 // current feedback register
 }
 
@@ -244,14 +245,14 @@ func (rng *rngSource) Int63() int64 {
 	return int64(rng.Uint64() & rngMask)
 }
 
+var U_SUB_1 int64 = -1
+
 // Uint64 returns a non-negative pseudo-random 64-bit integer as an uint64.
 func (rng *rngSource) Uint64() uint64 {
-	rng.tap++
-	rng.feed--
+	tap := atomic.AddUint64(&rng.tap, 1) % rngLen
+	feed := atomic.AddUint64(&rng.feed, uint64(U_SUB_1)) % rngLen
 
-	feed := rng.feed % rngLen
-
-	x := rng.vec[feed] + rng.vec[rng.tap%rngLen]
+	x := rng.vec[feed] + rng.vec[tap]
 	rng.vec[feed] = x
 	return uint64(x)
 }

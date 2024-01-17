@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/rpc/jsonrpc"
 
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jktls "github.com/jkprj/jkfr/gokit/utils/tls"
 	jklog "github.com/jkprj/jkfr/log"
 )
@@ -31,15 +31,13 @@ func RunServerWithTcp(listener net.Listener, server *Server, cfg *ServerConfig) 
 		}
 
 		go func() {
-			if jktrans.CODEC_JSON == cfg.Codec {
+			if jkutils.CODEC_JSON == cfg.Codec {
 				server.ServeCodec(jsonrpc.NewServerCodec(conn))
 			} else {
 				server.ServeConn(conn)
 			}
 		}()
 	}
-
-	return nil
 }
 
 func RunServerWithHttp(listener net.Listener, server *Server, cfg *ServerConfig) error {

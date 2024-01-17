@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"net/rpc"
 
-	// jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
 	jktls "github.com/jkprj/jkfr/gokit/utils/tls"
 	jklog "github.com/jkprj/jkfr/log"
+	jknet "github.com/jkprj/jkfr/net"
 )
 
 var connected = "200 Connected to Go RPC"
@@ -35,15 +35,6 @@ func DefaultRpcTLSHttpFatory(clientpem, clientkey []byte, path string) jkpool.Cl
 }
 
 func DefaultNewRpcClient(conn net.Conn, o *jkpool.Options) (p jkpool.PoolClient, err error) {
-
-	// if jktrans.CODEC_JSON == o.Codec {
-	// 	p = rpc.NewClientWithCodec(NewJsonCodec(conn, o))
-	// } else {
-	// 	p = rpc.NewClientWithCodec(NewClientCodec(conn, o))
-	// }
-
-	// return p, nil
-
 	return rpc.NewClientWithCodec(NewTimeoutCodecEx(conn, o)), nil
 }
 
@@ -53,7 +44,9 @@ func TcpConn(o *jkpool.Options) (net.Conn, error) {
 		return nil, jkpool.ErrTargets
 	}
 
-	conn, err := net.DialTimeout("tcp", target, o.DialTimeout)
+	conn, err := jknet.ConnWithResolve(target, func(addr string) (net.Conn, error) {
+		return net.DialTimeout("tcp", addr, o.DialTimeout)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -80,11 +73,12 @@ func TLSConn(o *jkpool.Options, clientpem, clientkey []byte) (net.Conn, error) {
 
 	target := o.ServerAddr
 	if target == "" {
-		jklog.Debugw(`TLSClientFatory not found target`)
 		return nil, jkpool.ErrTargets
 	}
 
-	conn, err := jktls.CreateTLSConn(clientpem, clientkey, target, o.DialTimeout)
+	conn, err := jknet.ConnWithResolve(target, func(addr string) (net.Conn, error) {
+		return jktls.CreateTLSConn(clientpem, clientkey, addr, o.DialTimeout)
+	})
 	if err != nil {
 		jklog.Errorw("CreateTLSConn fail", "target", target, "err", err)
 		return nil, err
@@ -111,16 +105,10 @@ func TLSClientFatory(newClient NewClient, clientpem, clientkey []byte) jkpool.Cl
 
 func RpcHttpConn(o *jkpool.Options, path string) (net.Conn, error) {
 
-	target := o.ServerAddr
-	if target == "" {
-		jklog.Errorw("HttpFatory not found target")
-		return nil, jkpool.ErrTargets
-	}
-
 	var err error
-	conn, err := net.DialTimeout("tcp", target, o.DialTimeout)
+	conn, err := TcpConn(o)
 	if err != nil {
-		jklog.Errorw("DialTimeout err", "target", target, "err", err)
+		jklog.Errorw("TcpConn err", "err", err)
 		return nil, err
 	}
 	io.WriteString(conn, "CONNECT "+path+" HTTP/1.0\n\n")
@@ -130,17 +118,17 @@ func RpcHttpConn(o *jkpool.Options, path string) (net.Conn, error) {
 		return conn, nil
 	}
 	if err == nil {
-		jklog.Errorw("http Response err", "target", target, "err", "unexpected HTTP response: "+resp.Status)
+		jklog.Errorw("http Response err", "err", "unexpected HTTP response: "+resp.Status)
 		err = errors.New("unexpected HTTP response: " + resp.Status)
 	} else {
-		jklog.Errorw("http Response err", "target", target, "err", err)
+		jklog.Errorw("http Response err", "err", err)
 	}
 
 	conn.Close()
 
 	return nil, &net.OpError{
 		Op:   "dial-http",
-		Net:  "tcp:" + target,
+		Net:  "tcp:" + o.ServerAddr,
 		Addr: nil,
 		Err:  err,
 	}
@@ -161,15 +149,10 @@ func RpcHttpFatory(newClient NewClient, path string) jkpool.ClientFatory {
 }
 
 func RpcTLSHttpConn(o *jkpool.Options, clientpem, clientkey []byte, path string) (net.Conn, error) {
-	target := o.ServerAddr
-	if target == "" {
-		jklog.Errorw("TLSHttpClientFatory not found target")
-		return nil, jkpool.ErrTargets
-	}
 
-	conn, err := jktls.CreateTLSConn(clientpem, clientkey, target, o.DialTimeout)
+	conn, err := TLSConn(o, clientpem, clientkey)
 	if err != nil {
-		jklog.Errorw("CreateTLSConn fail", "target", target, "err", err)
+		jklog.Errorw("TLSConn fail", "err", err)
 		return nil, err
 	}
 	io.WriteString(conn, "CONNECT "+path+" HTTP/1.0\n\n")
@@ -179,17 +162,17 @@ func RpcTLSHttpConn(o *jkpool.Options, clientpem, clientkey []byte, path string)
 		return conn, nil
 	}
 	if err == nil {
-		jklog.Errorw("http Response err", "target", target, "err", "unexpected HTTP response: "+resp.Status)
+		jklog.Errorw("http Response err", "err", "unexpected HTTP response: "+resp.Status)
 		err = errors.New("unexpected HTTP response: " + resp.Status)
 	} else {
-		jklog.Errorw("http Response err", "target", target, "err", err)
+		jklog.Errorw("http Response err", "err", err)
 	}
 
 	conn.Close()
 
 	return nil, &net.OpError{
 		Op:   "dial-http",
-		Net:  "tcp:" + target,
+		Net:  "tcp:" + o.ServerAddr,
 		Addr: nil,
 		Err:  err,
 	}

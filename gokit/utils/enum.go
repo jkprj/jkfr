@@ -1,4 +1,4 @@
-package transport
+package utils
 
 const (
 	STRATEGY_ROUND  = "round"
@@ -19,4 +19,9 @@ const (
 const (
 	CODEC_GOB  = "gob"
 	CODEC_JSON = "json"
+)
+
+const (
+	LEAST_ROUND_MAX  = 20
+	LEAST_RAND_COUNT = 10
 )

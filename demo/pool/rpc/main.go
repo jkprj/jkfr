@@ -2,7 +2,10 @@ package main
 
 import (
 	"flag"
+	"net/http"
+	_ "net/http/pprof"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -48,17 +51,30 @@ func init_param() {
 	log.Infow("param", "type", server_type, "server", server, "thread_count", th_count, "session_count", ss_count)
 }
 
+func run_pprof() {
+
+	// runtime.SetBlockProfileRate(1)
+	// runtime.SetMutexProfileFraction(1)
+
+	go func() {
+		err := http.ListenAndServe("10.9.16.64:8080", nil)
+		if nil != err {
+			log.Panicw("run pprof server fail", "err", err)
+		}
+	}()
+}
+
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	init_param()
+	run_pprof()
 
 	go statistics()
 
-	// test_pool()
-
-	loop_test_pool()
+	test_pool()
+	// loop_test_pool()
 
 	time.Sleep(time.Hour)
 }
@@ -98,12 +114,7 @@ func test_pool() {
 	opt := jkpool.NewOptions()
 	opt.MaxCap = ss_count
 	opt.IdleTimeout = time.Minute
-	pls, err := rpcpool.NewRpcPools(
-		[]string{
-			server,
-		},
-		opt,
-	)
+	pls, err := rpcpool.NewRpcPools(strings.Split(server, ","), opt)
 	if nil != err {
 		log.Errorw("connect server fail", "error", err)
 		return
@@ -141,7 +152,7 @@ func test_pool() {
 		}(i)
 	}
 
-	time.Sleep(time.Second * 1)
+	time.Sleep(time.Hour * 1000)
 
 	// if !bexit {
 	// 	bexit = true

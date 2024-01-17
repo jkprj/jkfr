@@ -398,6 +398,7 @@ func (cs *clients) get() (c *client, err error) {
 
 	return c, nil
 }
+
 func (cs *clients) min_get() (c *client) {
 
 	cs.mtClients.RLock()

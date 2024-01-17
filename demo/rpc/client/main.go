@@ -3,14 +3,16 @@ package main
 import (
 	"flag"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"net/rpc"
 	"runtime"
 	"sync/atomic"
 	"time"
 
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkrpc "github.com/jkprj/jkfr/gokit/transport/rpc"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklog "github.com/jkprj/jkfr/log"
 	// "github.com/hashicorp/consul/api"
 )
@@ -38,10 +40,25 @@ func init_param() {
 	jklog.Infow("param", "type", server_type, "server", server, "thread_count", th_count, "session_count", ss_count)
 }
 
+func run_pprof() {
+
+	// runtime.SetBlockProfileRate(1)
+	// runtime.SetMutexProfileFraction(1)
+
+	go func() {
+		err := http.ListenAndServe("10.9.16.64:8080", nil)
+		if nil != err {
+			jklog.Panicw("run pprof server fail", "err", err)
+		}
+	}()
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	jklog.InitLogger()
 	init_param()
+
+	run_pprof()
 
 	// callWithDefault()
 	// callWithTLSTCP()
@@ -123,7 +140,7 @@ func callWithTLSHttp() {
 func callWithOption() {
 	client, err := jkrpc.NewClient("test_rpc",
 		jkrpc.ClientConsulTags("rpc", "jinkun"),
-		jkrpc.ClientStrategy(jktrans.STRATEGY_RANDOM),
+		jkrpc.ClientStrategy(jkutils.STRATEGY_RANDOM),
 		jkrpc.ClientRateLimit(10),
 		jkrpc.ClientTimeOut(5),
 		jkrpc.ClientPassingOnly(true),
@@ -176,13 +193,17 @@ func callWithConfigureFileOption() {
 func pressureTest() {
 	jkrpc.RegistryNewClient("test", jkrpc.ClientCreateFatory(jkrpc.TcpClientFatory))
 
-	resp := new(URespone)
 	var count uint64
 
 	for i := 0; i < th_count; i++ {
 		go func() {
+
+			resp := new(URespone)
+			req := new(URequest)
+			var err error
+
 			for {
-				err := jkrpc.Call("test", "Hello.Hello", &URequest{}, resp)
+				err = jkrpc.Call("test", "Hello.Hello", req, resp)
 				if nil != err {
 					jklog.Errorw("call rpc fail", "err", err)
 					break
@@ -231,7 +252,7 @@ func testRPC() {
 
 	for i := 0; i < th_count; i++ {
 
-		go func() {
+		go func(i int) {
 
 			client := clients[i%ss_count]
 
@@ -243,7 +264,7 @@ func testRPC() {
 				}
 				atomic.AddInt64(&count, 1)
 			}
-		}()
+		}(i)
 	}
 
 	for {

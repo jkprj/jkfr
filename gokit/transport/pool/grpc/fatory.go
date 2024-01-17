@@ -10,6 +10,7 @@ import (
 
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
 	jklog "github.com/jkprj/jkfr/log"
+	jknet "github.com/jkprj/jkfr/net"
 
 	"google.golang.org/grpc"
 )
@@ -98,7 +99,13 @@ func GRPCConn(target string, opts ...grpc.DialOption) (*grpc.ClientConn, error) 
 		return nil, jkpool.ErrTargets
 	}
 
-	conn, err := grpc.Dial(target, opts...)
+	var conn *grpc.ClientConn
+	_, err := jknet.ConnWithResolve(target, func(addr string) (net.Conn, error) {
+		var err error
+		conn, err = grpc.Dial(addr, opts...)
+		return nil, err
+	})
+
 	if err != nil {
 		return nil, err
 	}

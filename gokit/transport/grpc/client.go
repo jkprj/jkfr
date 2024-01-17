@@ -15,6 +15,7 @@ import (
 	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
 	grpc_pools "github.com/jkprj/jkfr/gokit/transport/pool/grpc"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklb "github.com/jkprj/jkfr/gokit/utils/lb"
 	jklog "github.com/jkprj/jkfr/log"
 
@@ -180,7 +181,7 @@ func (client *GRPCClient) GetUCall() chan *UCall {
 
 func (client *GRPCClient) Call(action string, req interface{}) (rsp interface{}, err error) {
 
-	if true == client.isClose {
+	if client.isClose {
 		return nil, jkpool.ErrClosed
 	}
 
@@ -227,7 +228,7 @@ func (client *GRPCClient) GoCall(action string, req interface{}) *UCall {
 
 func (client *GRPCClient) Close() {
 
-	if true == client.isClose {
+	if client.isClose {
 		return
 	}
 
@@ -275,9 +276,9 @@ func (client *GRPCClient) makeRuquestEndpoint() endpoint.Endpoint {
 
 	var balancer lb.Balancer
 	{
-		if jktrans.STRATEGY_ROUND == client.cfg.Strategy {
+		if jkutils.STRATEGY_ROUND == client.cfg.Strategy {
 			balancer = lb.NewRoundRobin(client.consulEndpointer)
-		} else if jktrans.STRATEGY_RANDOM == client.cfg.Strategy {
+		} else if jkutils.STRATEGY_RANDOM == client.cfg.Strategy {
 			balancer = jklb.NewRandom(client.consulEndpointer, time.Now().UnixNano())
 		} else {
 			balancer = jklb.NewLeastBalancer(client.consulEndpointer)

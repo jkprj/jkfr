@@ -5,14 +5,14 @@ import (
 	"net/rpc"
 	"time"
 
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
 	"google.golang.org/grpc"
 
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
-	"github.com/jkprj/jkfr/gokit/utils"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jkos "github.com/jkprj/jkfr/os"
 
 	"golang.org/x/time/rate"
@@ -87,10 +87,10 @@ func defaultClientConfig(name string) *ClientConfig {
 	cfg.RegOps = []jkregistry.RegOption{}
 	cfg.ActionMiddlewares = []jkendpoint.ActionMiddleware{}
 	cfg.AsyncCallChan = make(chan *UCall, 100)
-	cfg.GRPCDialOps = []grpc.DialOption{grpc.WithInsecure(), grpc.WithTimeout(time.Second * 5)}
+	cfg.GRPCDialOps = []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithTimeout(time.Second * 5)}
 
 	cfg.ConsulTags = jkos.GetEnvStrings("C_CONSUL_TAGS", ",", nil)
-	cfg.Strategy = jkos.GetEnvString("C_STRATEGY", jktrans.STRATEGY_LEAST)
+	cfg.Strategy = jkos.GetEnvString("C_STRATEGY", jkutils.STRATEGY_LEAST)
 	cfg.PrometheusNameSpace = jkos.GetEnvString("C_PROMETHEUS_NAME_SPACE", name)
 	cfg.Retry = jkos.GetEnvInt("C_RETRY", 3)
 	cfg.RetryIntervalMS = jkos.GetEnvInt("C_RETRY_INTERVAL_MS", 1000)
@@ -182,7 +182,7 @@ func appendGRPCConfig(cfg *ClientConfig, tmpCfg *clientConfig) {
 		cfg.GRPCDialOps = append(cfg.GRPCDialOps, grpc.WithTimeout(timeOut))
 	}
 
-	if true == tmpCfg.GRPCCfg.EnableCompressor {
+	if tmpCfg.GRPCCfg.EnableCompressor {
 		if tmpCfg.GRPCCfg.CompressorLevel < gzip.DefaultCompression || tmpCfg.GRPCCfg.CompressorLevel > gzip.BestCompression {
 			tmpCfg.GRPCCfg.CompressorLevel = gzip.BestCompression
 		}
@@ -192,7 +192,7 @@ func appendGRPCConfig(cfg *ClientConfig, tmpCfg *clientConfig) {
 		cfg.GRPCDialOps = append(cfg.GRPCDialOps, grpc.WithDecompressor(grpc.NewGZIPDecompressor()))
 	}
 
-	if false != tmpCfg.KPCfg.PermitWithoutStream ||
+	if tmpCfg.KPCfg.PermitWithoutStream ||
 		0 != tmpCfg.KPCfg.Time ||
 		0 != tmpCfg.KPCfg.Timeout {
 
@@ -213,7 +213,7 @@ func newClientConfig(name string, ops ...ClientOption) *ClientConfig {
 		op(cfg)
 	}
 
-	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jktrans.ROLE_CLIENT, cfg.RateLimit)
+	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jkutils.ROLE_CLIENT, cfg.RateLimit)
 
 	if 0 < len(cfg.tmpActionMiddlewares) {
 		cfg.ActionMiddlewares = cfg.tmpActionMiddlewares
@@ -324,7 +324,7 @@ func ClientConfigFile(cfgPath string) ClientOption {
 	return func(cfg *ClientConfig) {
 		cfg.ConfigPath = cfgPath
 		config := clientConfig{Cfg: cfg}
-		utils.ReadConfigFile(cfg.ConfigPath, &config)
+		jkutils.ReadConfigFile(cfg.ConfigPath, &config)
 		appendGRPCConfig(cfg, &config)
 
 		cfg.RegOps = append(cfg.RegOps, jkregistry.WithFile(cfgPath))

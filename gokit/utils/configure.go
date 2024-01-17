@@ -13,7 +13,7 @@ import (
 // 读取并解析配置文件
 func ReadConfigFile(path string, cfg interface{}) (err error) {
 
-	if "" == path {
+	if path == "" {
 		jklog.Debugw("config file path is empty")
 		return errors.New("config file path is empty")
 	}
@@ -28,7 +28,7 @@ func ReadConfigFile(path string, cfg interface{}) (err error) {
 	var tmErr error
 
 	defer func() {
-		if nil == jsErr || nil == tmErr {
+		if jsErr == nil || tmErr == nil {
 			// jklog.Infow("load config success", "cfg", cfg, "path", path)
 		} else {
 			jklog.Errorw("load config fail", "ConfigPath", path, "json_err", jsErr, "toml_err", tmErr)

@@ -4,13 +4,15 @@ import (
 	"compress/gzip"
 	"context"
 	"flag"
+	"net/http"
+	_ "net/http/pprof"
 	"runtime"
 	"sync/atomic"
 	"time"
 
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkgrpc "github.com/jkprj/jkfr/gokit/transport/grpc"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklog "github.com/jkprj/jkfr/log"
 	pb "github.com/jkprj/jkfr/protobuf/demo"
 	hellogrpc "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/client/grpc"
@@ -41,10 +43,25 @@ func init_param() {
 	jklog.Infow("param", "type", server_type, "server", server, "thread_count", th_count, "session_count", ss_count)
 }
 
+func run_pprof() {
+
+	runtime.SetBlockProfileRate(1)
+	runtime.SetMutexProfileFraction(1)
+
+	go func() {
+		err := http.ListenAndServe(":8080", nil)
+		if nil != err {
+			jklog.Panicw("run pprof server fail", "err", err)
+		}
+	}()
+}
+
 func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// jklog.InitLogger(&jklog.ZapOptions{LogLevel: "debug"})
+
+	run_pprof()
 
 	init_param()
 
@@ -94,7 +111,7 @@ func runClientWithOption() {
 
 	client, err := jkgrpc.NewClient("test",
 		clientFatory,
-		jkgrpc.ClientStrategy(jktrans.STRATEGY_RANDOM),
+		jkgrpc.ClientStrategy(jkutils.STRATEGY_RANDOM),
 		jkgrpc.ClientLimit(2),
 		jkgrpc.ClientConsulTags("jinkun"),
 		jkgrpc.ClientRetry(5),
@@ -251,7 +268,7 @@ func testgrpc() {
 	var count int64
 
 	for i := 0; i < th_count; i++ {
-		go func() {
+		go func(i int) {
 
 			client := clients[i%ss_count]
 			req := &pb.HelloRequest{}
@@ -265,7 +282,7 @@ func testgrpc() {
 
 				atomic.AddInt64(&count, 1)
 			}
-		}()
+		}(i)
 	}
 
 	for {

@@ -10,11 +10,12 @@ import (
 
 	kitlog "github.com/jkprj/jkfr/gokit/log"
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	"github.com/jkprj/jkfr/gokit/sd"
+	jksd "github.com/jkprj/jkfr/gokit/sd"
 	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
 	rpcpool "github.com/jkprj/jkfr/gokit/transport/pool/rpc"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklb "github.com/jkprj/jkfr/gokit/utils/lb"
 	jklog "github.com/jkprj/jkfr/log"
 
@@ -22,10 +23,6 @@ import (
 	kitsd "github.com/go-kit/kit/sd"
 	kitconsul "github.com/go-kit/kit/sd/consul"
 	"github.com/go-kit/kit/sd/lb"
-)
-
-var (
-	ERR_NOT_FOUND_HOST_POOL = errors.New("not found host pool")
 )
 
 var connected = "200 Connected to Go RPC"
@@ -153,7 +150,7 @@ type RPCClient struct {
 	rpcPool *rpcpool.RpcPools
 
 	consulInstancer  *kitconsul.Instancer
-	consulEndpointer *sd.DefaultEndpointer
+	consulEndpointer *jksd.DefaultEndpointer
 	reqEndPoint      endpoint.Endpoint
 
 	actionEndPoint map[string]endpoint.Endpoint
@@ -253,13 +250,13 @@ func (client *RPCClient) GoCall(action string, req, resp interface{}) *rpc.Call 
 func (client *RPCClient) makeRuquestEndpoint() endpoint.Endpoint {
 
 	client.consulInstancer = kitconsul.NewInstancer(client.consulClient, kitlog.InfowLogger, client.name, client.cfg.ConsulTags, client.cfg.PassingOnly)
-	client.consulEndpointer = sd.NewEndpointer(client.consulInstancer, client.makeRequestFactory(), kitlog.ErrorwLogger)
+	client.consulEndpointer = jksd.NewEndpointer(client.consulInstancer, client.makeRequestFactory(), kitlog.ErrorwLogger)
 
 	var balancer lb.Balancer
 	{
-		if jktrans.STRATEGY_ROUND == client.cfg.Strategy {
+		if jkutils.STRATEGY_ROUND == client.cfg.Strategy {
 			balancer = lb.NewRoundRobin(client.consulEndpointer)
-		} else if jktrans.STRATEGY_RANDOM == client.cfg.Strategy {
+		} else if jkutils.STRATEGY_RANDOM == client.cfg.Strategy {
 			balancer = jklb.NewRandom(client.consulEndpointer, time.Now().UnixNano())
 		} else {
 			balancer = jklb.NewLeastBalancer(client.consulEndpointer)

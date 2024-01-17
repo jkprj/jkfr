@@ -13,10 +13,10 @@ import (
 
 	"google.golang.org/grpc"
 
-	jktran "github.com/jkprj/jkfr/gokit/transport"
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jkrand "github.com/jkprj/jkfr/gokit/utils/rand"
-	"github.com/jkprj/jkfr/log"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 type GetPoolFunc func() *stpool
@@ -24,14 +24,6 @@ type GetPoolFunc func() *stpool
 type UCall struct {
 	rpc.Call
 	Done chan *UCall
-}
-
-func (call *UCall) done() {
-	select {
-	case call.Done <- call:
-	default:
-		// log debug
-	}
 }
 
 type stpool struct {
@@ -80,24 +72,27 @@ func NewGRPCPools(addrs []string, opt *jkpool.Options) (*GRPCPools, error) {
 	p := new(GRPCPools)
 	p.addr2pool = make(map[string]*stpool)
 	p.pools = make([]*stpool, 0, len(addrs))
-	p.chExit = make(chan int)
 	p.opt = opt
 	p.SetRetryTimes(3)
 	p.SetIdleTimeOut(600)
-	p.SetStrategy(jktran.STRATEGY_LEAST)
+	p.SetStrategy(jkutils.STRATEGY_LEAST)
 	p.SetRetryIntervalMS(1000)
+
+	// p.random = rand.New(rand.NewSource(time.Now().UnixNano()))      // golang提供的source不是线程安全的
+	p.random = rand.New(jkrand.NewSource(time.Now().UnixNano()))
 
 	if nil != addrs {
 		for _, addr := range addrs {
 			_, err := p.get_and_push(addr, opt, true)
 			if nil != err {
-				log.Infow("GRPCPools.get_and_push err, to close pool", "err", err.Error())
+				jklog.Infow("GRPCPools.get_and_push err, to close pool", "err", err.Error())
 				p.Close()
 				return nil, err
 			}
 		}
 	}
 
+	p.chExit = make(chan int)
 	go p.loop_check_idle_time_out_pool()
 
 	return p, nil
@@ -111,16 +106,16 @@ func (pls *GRPCPools) call(ctx context.Context, serviceMethod string, args inter
 
 	pl := pls.get_pool()
 	if nil == pl {
-		log.Errorw("not found server")
+		jklog.Errorw("not found server")
 		return nil, errors.New("not found server")
 	}
 
 	atomic.AddInt64(&pl.call, 1)
 
 	resp, err = pl.pl.CallWithContext(ctx, serviceMethod, args)
-	if nil != err {
-		// log.Errorw("Call fail", "method", serviceMethod, "error", err)
-	}
+	// if nil != err {
+	// 	log.Errorw("Call fail", "method", serviceMethod, "error", err)
+	// }
 
 	atomic.AddInt64(&pl.call, -1)
 	pl.last = time.Now()
@@ -206,7 +201,7 @@ func (pls *GRPCPools) GoCallWithContext(ctx context.Context, serviceMethod strin
 	go func() {
 		call.Reply, call.Error = pls.CallWithContext(ctx, serviceMethod, args)
 		if nil != call.Error {
-			log.Errorw("GRPCPools.call fail", "error", call.Error)
+			jklog.Errorw("GRPCPools.call fail", "error", call.Error)
 		}
 
 		done <- call
@@ -230,7 +225,7 @@ func (pls *GRPCPools) CallWithAddrEx(addr string, serviceMethod string, args int
 
 		pl, err := pls.getex(addr)
 		if nil != err {
-			log.Errorw("getex client fail", "addr", addr, "method", serviceMethod, "error", err)
+			jklog.Errorw("getex client fail", "addr", addr, "method", serviceMethod, "error", err)
 			return nil, err
 		}
 
@@ -269,7 +264,9 @@ func (pls *GRPCPools) close() {
 
 	pls.isClosed = true
 
-	pls.chExit <- 1
+	if pls.chExit != nil {
+		pls.chExit <- 1
+	}
 
 	// log.Infow("GRPCPools.close")
 
@@ -322,19 +319,17 @@ func (pls *GRPCPools) SetStrategy(strategy string) {
 
 	pls.strategy = strategy
 
-	if jktran.STRATEGY_RANDOM == strategy {
-		// pls.random = rand.New(rand.NewSource(time.Now().UnixNano()))      // golang提供的source不是线程安全的
-		pls.random = rand.New(jkrand.NewSource(time.Now().UnixNano()))
+	if jkutils.STRATEGY_RANDOM == strategy {
 		pls.get_pool = func() *stpool {
 			return pls.random_get()
 		}
 
-	} else if jktran.STRATEGY_ROUND == strategy {
+	} else if jkutils.STRATEGY_ROUND == strategy {
 		pls.get_pool = func() *stpool {
 			return pls.roll_get()
 		}
 	} else {
-		pls.strategy = jktran.STRATEGY_LEAST
+		pls.strategy = jkutils.STRATEGY_LEAST
 		pls.get_pool = func() *stpool {
 			return pls.least_get()
 		}
@@ -349,7 +344,7 @@ func (pls *GRPCPools) get_and_push(addr string, opt *jkpool.Options, static bool
 
 	pl, err := pls.new_and_push(addr, opt, static)
 	if nil != err {
-		log.Errorw("new_and_push fail", "addr", addr, "opt", opt, "error", err)
+		jklog.Errorw("new_and_push fail", "addr", addr, "opt", opt, "error", err)
 		return nil, err
 	}
 
@@ -363,7 +358,7 @@ func (pls *GRPCPools) push(addr string, pl *stpool) *stpool {
 
 	tmp, ok := pls.addr2pool[addr]
 	if ok {
-		log.Infow("GRPCPools push poll, to close old pool")
+		jklog.Infow("GRPCPools push poll, to close old pool")
 		tmp.pl.Close()
 		tmp.pl = pl.pl
 		tmp.static = pl.static
@@ -384,7 +379,7 @@ func (pls *GRPCPools) new_and_push(addr string, opt *jkpool.Options, static bool
 	defer pls.mtNew.Unlock()
 
 	if pls.isClosed {
-		return nil, errors.New("Pools is closed")
+		return nil, errors.New("pools is closed")
 	}
 
 	pl := pls.get(addr)
@@ -397,7 +392,7 @@ func (pls *GRPCPools) new_and_push(addr string, opt *jkpool.Options, static bool
 
 	tmp, err := NewGRPCPool(&tmp_opt)
 	if nil != err {
-		log.Errorw("NewRpcPool fail", "addr", addr, "opt", opt, "error", err)
+		jklog.Errorw("NewRpcPool fail", "addr", addr, "opt", opt, "error", err)
 		return nil, err
 	}
 
@@ -437,26 +432,74 @@ func (pls *GRPCPools) random_get() *stpool {
 
 func (pls *GRPCPools) least_get() *stpool {
 
-	var index uint32 = 0
-	var min int64 = math.MaxInt64
-
 	pls.mtPool.RLock()
 
-	for i, pl := range pls.pools {
-		if min > pl.call {
-			min = pl.call
-			index = uint32(i)
-		}
-		if 0 == min {
-			break
-		}
+	nlen := uint32(len(pls.pools))
+	if nlen == 0 {
+		pls.mtPool.RUnlock()
+		return nil
 	}
 
-	pls.index = uint32(index)
+	// 当连接池实例小于LEAST_ROUND_MAX时，使用循环遍历查找请求最小的实例
+	// 当连接池实例大于LEAST_ROUND_MAX时，使用随机抽取LEAST_RAND_COUNT个实例，选取最小的那个
+	if nlen <= jkutils.LEAST_ROUND_MAX {
+		pls.index = pls.least_get_when_less()
+	} else {
+		pls.index = pls.least_get_when_bigger()
+	}
 
 	pls.mtPool.RUnlock()
 
 	return pls.get_index_ex(pls.index)
+}
+
+func (pls *GRPCPools) least_get_when_less() (index uint32) {
+	var min int64 = math.MaxInt64
+	nlen := uint32(len(pls.pools))
+
+	// 使用随机数开始下标是为了防止当客户端的请求频率比较小的时候所有的请求都打到第一个服务上
+	// 使用随机数后，那么每次都是从随机下标开始扫描pool，这样就可以防止请求量较小时一直都是发第一个
+	// 主要就是为了解决客户端比较多而每个客户端请求频率又是比较少的情况，防止所有客户端都把请求发到第一个服务了
+	bgIndex := pls.random.Uint32() % nlen
+
+	for i := uint32(0); i < nlen; i++ {
+
+		cur := (bgIndex + i) % nlen
+		pl := pls.pools[cur]
+
+		if min > pl.call {
+			min = pl.call
+			index = cur
+		}
+		if min == 0 {
+			break
+		}
+	}
+
+	return index
+}
+
+func (pls *GRPCPools) least_get_when_bigger() (index uint32) {
+
+	var min int64 = math.MaxInt64
+	nlen := uint32(len(pls.pools))
+
+	// 随机抽取LEAST_RAND_COUNT个选最小那个返回
+	for i := 0; i < jkutils.LEAST_RAND_COUNT; i++ {
+
+		cur := pls.random.Uint32() % nlen
+		pl := pls.pools[cur]
+
+		if min > pl.call {
+			min = pl.call
+			index = cur
+		}
+		if min == 0 {
+			break
+		}
+	}
+
+	return index
 }
 
 func (pls *GRPCPools) getex(addr string) (*stpool, error) {
@@ -482,7 +525,7 @@ func (pls *GRPCPools) remove_index(i int) {
 
 	delete(pls.addr2pool, tmp.pl.addr)
 
-	log.Infow("GRPCPools.remove_pool to close pool")
+	jklog.Infow("GRPCPools.remove_pool to close pool")
 
 	tmp.pl.Close()
 }
@@ -501,7 +544,7 @@ func (pls *GRPCPools) get_index_ex(index uint32) *stpool {
 
 	pl = pls.pools[index%uint32(length)]
 
-	if false == pl.pl.IsConnected() { // 该连接池没有可用连接，就遍历获取一个有连接的连接池
+	if !pl.pl.IsConnected() { // 该连接池没有可用连接，就遍历获取一个有连接的连接池
 		for i := 0; i < length; i++ {
 
 			tmpIndex := (index + uint32(i)) % uint32(length)
@@ -585,7 +628,7 @@ func (pls *GRPCPools) remove_idle_time_out() {
 
 		// log.Infow("GRPCPools remove_idle_time_out pool")
 
-		if !pl.static && time.Now().Sub(pl.last) > pls.idleTimeOut && atomic.LoadInt64(&pl.call) == 0 {
+		if !pl.static && time.Since(pl.last) > pls.idleTimeOut && atomic.LoadInt64(&pl.call) == 0 {
 			pls.remove_index(i)
 			continue
 		}

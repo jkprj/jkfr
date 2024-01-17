@@ -4,9 +4,8 @@ import (
 	"net/http"
 
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
-	"github.com/jkprj/jkfr/gokit/utils"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklog "github.com/jkprj/jkfr/log"
 	jkos "github.com/jkprj/jkfr/os"
 
@@ -70,7 +69,7 @@ func loadServerDefaultClientConfig(name string, cfg *ServerConfig) {
 func defaultServerGetAction(req *http.Request) string {
 	req.ParseForm()
 	action := req.FormValue("Action")
-	if "" != action {
+	if action != "" {
 		return action
 	}
 
@@ -87,15 +86,15 @@ func newServerConfig(serverName string, ops ...ServerOption) *ServerConfig {
 		op(cfg)
 	}
 
-	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jktrans.ROLE_SERVER, cfg.RateLimit)
+	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jkutils.ROLE_SERVER, cfg.RateLimit)
 
 	if 0 < len(cfg.tmpActionMiddlewares) {
 		cfg.ActionMiddlewares = cfg.tmpActionMiddlewares
 	}
 
-	err := utils.ResetServerAddr(&cfg.ServerAddr, &cfg.BindAddr)
+	err := jkutils.ResetServerAddr(&cfg.ServerAddr, &cfg.BindAddr)
 	if nil != err {
-		jklog.Panicw("utils.ResetServerAddr error", "ServerAddr", cfg.ServerAddr, "BindAddr", cfg.BindAddr, "error", err)
+		jklog.Panicw("jkutils.ResetServerAddr error", "ServerAddr", cfg.ServerAddr, "BindAddr", cfg.BindAddr, "error", err)
 	}
 
 	return cfg
@@ -148,6 +147,6 @@ func ServerConfigFile(cfgPath string) ServerOption {
 
 		cfg.ConfigPath = cfgPath
 		config := serverConfig{Cfg: cfg}
-		utils.ReadConfigFile(cfg.ConfigPath, &config)
+		jkutils.ReadConfigFile(cfg.ConfigPath, &config)
 	}
 }

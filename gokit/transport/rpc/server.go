@@ -82,7 +82,7 @@ func runServer(name string, service interface{}, ops ...ServerOption) error {
 	defer registry.Deregister()
 
 	server := NewServer(cfg.Codec)
-	if "" == cfg.RpcName {
+	if cfg.RpcName == "" {
 		err = server.Register(service)
 	} else {
 		err = server.RegisterName(cfg.RpcName, service)

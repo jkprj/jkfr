@@ -9,9 +9,8 @@ import (
 	"google.golang.org/grpc"
 
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
-	"github.com/jkprj/jkfr/gokit/utils"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklog "github.com/jkprj/jkfr/log"
 	jkos "github.com/jkprj/jkfr/os"
 
@@ -162,7 +161,7 @@ func appendGRPCServerConfig(cfg *ServerConfig, tmpCfg *serverConfig) {
 		cfg.GRPCSvrOps = append(cfg.GRPCSvrOps, grpc.MaxHeaderListSize(tmpCfg.GRPCCfg.MaxHeaderListSize))
 	}
 
-	if true == tmpCfg.GRPCCfg.EnableCompressor {
+	if tmpCfg.GRPCCfg.EnableCompressor {
 		if tmpCfg.GRPCCfg.CompressorLevel < gzip.DefaultCompression || tmpCfg.GRPCCfg.CompressorLevel > gzip.BestCompression {
 			tmpCfg.GRPCCfg.CompressorLevel = gzip.BestCompression
 		}
@@ -197,15 +196,15 @@ func newServerConfig(serverName string, ops ...ServerOption) *ServerConfig {
 		op(cfg)
 	}
 
-	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jktrans.ROLE_SERVER, cfg.RateLimit)
+	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jkutils.ROLE_SERVER, cfg.RateLimit)
 
 	if 0 < len(cfg.tmpActionMiddlewares) {
 		cfg.ActionMiddlewares = cfg.tmpActionMiddlewares
 	}
 
-	err := utils.ResetServerAddr(&cfg.ServerAddr, &cfg.BindAddr)
+	err := jkutils.ResetServerAddr(&cfg.ServerAddr, &cfg.BindAddr)
 	if nil != err {
-		jklog.Panicw("utils.ResetServerAddr error", "ServerAddr", cfg.ServerAddr, "BindAddr", cfg.BindAddr, "error", err)
+		jklog.Panicw("jkutils.ResetServerAddr error", "ServerAddr", cfg.ServerAddr, "BindAddr", cfg.BindAddr, "error", err)
 	}
 
 	return cfg
@@ -257,7 +256,7 @@ func ServerConfigFile(cfgPath string) ServerOption {
 	return func(cfg *ServerConfig) {
 		cfg.ConfigPath = cfgPath
 		config := serverConfig{Cfg: cfg}
-		utils.ReadConfigFile(cfg.ConfigPath, &config)
+		jkutils.ReadConfigFile(cfg.ConfigPath, &config)
 		appendGRPCServerConfig(cfg, &config)
 	}
 }

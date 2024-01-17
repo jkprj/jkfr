@@ -7,10 +7,10 @@ import (
 func ResetServerAddr(svrAddr, bindAddr *string) (err error) {
 
 	// 如果只设置了一个，则使服务地址和绑定地址一致
-	if "" == *bindAddr {
+	if *bindAddr == "" {
 		*bindAddr = *svrAddr
 	}
-	if "" == *svrAddr {
+	if *svrAddr == "" {
 		*svrAddr = *bindAddr
 	}
 
@@ -51,7 +51,7 @@ func ZeroStruct(st interface{}) {
 
 		fv := e.Field(i)
 
-		if fv.IsZero() || false == fv.CanSet() {
+		if fv.IsZero() || !fv.CanSet() {
 			continue
 		}
 

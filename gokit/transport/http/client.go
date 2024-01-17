@@ -15,8 +15,8 @@ import (
 
 	kitlog "github.com/jkprj/jkfr/gokit/log"
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklb "github.com/jkprj/jkfr/gokit/utils/lb"
 	jklog "github.com/jkprj/jkfr/log"
 
@@ -263,12 +263,12 @@ func (client *HttpClient) makeRequestFactory() sd.Factory {
 				return nil, errors.New("the request is not reuquestParam")
 			}
 
-			if jktrans.HTTP == client.cfg.Scheme {
-				if !strings.HasPrefix(instance, jktrans.HTTP) {
+			if jkutils.HTTP == client.cfg.Scheme {
+				if !strings.HasPrefix(instance, jkutils.HTTP) {
 					instance = "http://" + instance
 				}
-			} else if jktrans.HTTPS == client.cfg.Scheme {
-				if !strings.HasPrefix(instance, jktrans.HTTPS) {
+			} else if jkutils.HTTPS == client.cfg.Scheme {
+				if !strings.HasPrefix(instance, jkutils.HTTPS) {
 					instance = "https://" + instance
 				}
 			} else {
@@ -297,9 +297,9 @@ func (client *HttpClient) makeRuquestEndpoint() endpoint.Endpoint {
 
 	var balancer lb.Balancer
 	{
-		if jktrans.STRATEGY_ROUND == client.cfg.Strategy {
+		if jkutils.STRATEGY_ROUND == client.cfg.Strategy {
 			balancer = lb.NewRoundRobin(client.consulEndpointer)
-		} else if jktrans.STRATEGY_RANDOM == client.cfg.Strategy {
+		} else if jkutils.STRATEGY_RANDOM == client.cfg.Strategy {
 			balancer = jklb.NewRandom(client.consulEndpointer, time.Now().UnixNano())
 		} else {
 			balancer = jklb.NewLeastBalancer(client.consulEndpointer)
@@ -315,7 +315,7 @@ func makeEncodeRequest(cfg *ClientConfig) kithttp.EncodeRequestFunc {
 		AppendHeader(req.Header, cfg.Header)
 
 		if _, ok := request.([]byte); ok {
-			req.Body = ioutil.NopCloser(bytes.NewBuffer(request.([]byte)))
+			req.Body = io.NopCloser(bytes.NewBuffer(request.([]byte)))
 		}
 
 		return nil
@@ -323,7 +323,7 @@ func makeEncodeRequest(cfg *ClientConfig) kithttp.EncodeRequestFunc {
 }
 
 func DecodeReponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	defer resp.Body.Close()
 
 	return data, err

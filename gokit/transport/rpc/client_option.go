@@ -4,11 +4,9 @@ import (
 	"net/http"
 	"net/rpc"
 
-	"github.com/jkprj/jkfr/gokit/utils"
-
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jkos "github.com/jkprj/jkfr/os"
 
 	"golang.org/x/time/rate"
@@ -70,9 +68,9 @@ func defaultClientConfig(name string) *ClientConfig {
 	cfg.Fatory = TcpClientFatory
 
 	cfg.ConsulTags = jkos.GetEnvStrings("C_CONSUL_TAGS", ",", nil)
-	cfg.Strategy = jkos.GetEnvString("C_STRATEGY", jktrans.STRATEGY_LEAST)
+	cfg.Strategy = jkos.GetEnvString("C_STRATEGY", jkutils.STRATEGY_LEAST)
 	cfg.PrometheusNameSpace = jkos.GetEnvString("C_PROMETHEUS_NAME_SPACE", name)
-	cfg.Codec = jkos.GetEnvString("C_CODEC", jktrans.CODEC_GOB)
+	cfg.Codec = jkos.GetEnvString("C_CODEC", jkutils.CODEC_GOB)
 	cfg.Retry = jkos.GetEnvInt("C_RETRY", 3)
 	cfg.RetryIntervalMS = jkos.GetEnvInt("C_RETRY_INTERVAL_MS", 1000)
 	cfg.RateLimit = rate.Limit(jkos.GetEnvInt("C_RATE_LIMIT", 0))
@@ -123,7 +121,7 @@ func newClientConfig(name string, ops ...ClientOption) *ClientConfig {
 		op(cfg)
 	}
 
-	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jktrans.ROLE_CLIENT, cfg.RateLimit)
+	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jkutils.ROLE_CLIENT, cfg.RateLimit)
 
 	if 0 < len(cfg.tmpActionMiddlewares) {
 		cfg.ActionMiddlewares = cfg.tmpActionMiddlewares
@@ -242,7 +240,7 @@ func ClientKeepAlive(keepAlive bool) ClientOption {
 
 func ClientAsyncCallChan(asyncCallChan chan *rpc.Call) ClientOption {
 	return func(cfg *ClientConfig) {
-		if nil != asyncCallChan && 0 != cap(asyncCallChan) {
+		if nil != asyncCallChan && cap(asyncCallChan) != 0 {
 			cfg.AsyncCallChan = asyncCallChan
 		}
 	}
@@ -303,6 +301,6 @@ func ClientConfigFile(cfgPath string) ClientOption {
 
 		cfg.ConfigPath = cfgPath
 		config := clientConfig{Cfg: cfg}
-		utils.ReadConfigFile(cfg.ConfigPath, &config)
+		jkutils.ReadConfigFile(cfg.ConfigPath, &config)
 	}
 }

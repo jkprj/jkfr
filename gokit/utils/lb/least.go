@@ -2,13 +2,14 @@ package lb
 
 import (
 	"context"
-	"math/rand"
+	"math"
 	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
 
-	urand "github.com/jkprj/jkfr/gokit/utils/rand"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
+	jkrand "github.com/jkprj/jkfr/gokit/utils/rand"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/sd"
@@ -18,7 +19,6 @@ import (
 type epCall struct {
 	ep   endpoint.Endpoint
 	call int64
-	last time.Time
 }
 
 func NewLeastBalancer(s sd.Endpointer) glb.Balancer {
@@ -26,7 +26,6 @@ func NewLeastBalancer(s sd.Endpointer) glb.Balancer {
 	l := least{s: s}
 	l.epCalls = make(map[reflect.Value]*epCall)
 	l.pre_check_time = time.Now()
-	l.random = rand.New(urand.NewSource(time.Now().UnixNano()))
 
 	return &l
 }
@@ -37,14 +36,13 @@ type least struct {
 	mt             sync.RWMutex
 	pre_check_time time.Time
 	eps            []endpoint.Endpoint
-	random         *rand.Rand
 }
 
 func (l *least) try_reset_endpoints(eps []endpoint.Endpoint) {
 
 	l.mt.RLock()
 
-	if len(l.eps) == len(eps) && time.Now().Sub(l.pre_check_time) < time.Minute {
+	if len(l.eps) == len(eps) && time.Since(l.pre_check_time) < time.Minute {
 		l.mt.RUnlock()
 		return
 	}
@@ -53,7 +51,7 @@ func (l *least) try_reset_endpoints(eps []endpoint.Endpoint) {
 
 	l.mt.Lock()
 
-	if len(l.eps) == len(eps) && time.Now().Sub(l.pre_check_time) < time.Minute {
+	if len(l.eps) == len(eps) && time.Since(l.pre_check_time) < time.Minute {
 		l.mt.Unlock()
 		return
 	}
@@ -82,40 +80,72 @@ func (l *least) try_reset_endpoints(eps []endpoint.Endpoint) {
 func (l *least) get_least(eps []endpoint.Endpoint) *epCall {
 
 	var tmpEpc *epCall
-	var tmpEpcs []*epCall
-	var min int64 = 1000000000000
 
 	l.mt.RLock()
 
-	for _, ep := range eps {
-
-		key := reflect.ValueOf(ep)
-		epc, ok := l.epCalls[key]
-
-		if !ok {
-			tmpEpc = &epCall{ep: ep}
-			l.epCalls[key] = tmpEpc
-			break
-		} else if min > epc.call {
-			min = epc.call
-			// tmpEpc = epc
-			tmpEpcs = nil
-			tmpEpcs = append(tmpEpcs, epc)
-		} else if min == epc.call {
-			tmpEpcs = append(tmpEpcs, epc)
-		}
+	if len(eps) <= jkutils.LEAST_ROUND_MAX {
+		tmpEpc = l.get_least_when_less(eps)
+	} else {
+		tmpEpc = l.get_least_when_bigger(eps)
 	}
 
 	l.mt.RUnlock()
 
-	if nil == tmpEpc && nil != tmpEpcs {
+	return tmpEpc
+}
 
-		length := len(tmpEpcs)
+func (l *least) get_least_when_less(eps []endpoint.Endpoint) *epCall {
 
-		if 1 == length {
-			tmpEpc = tmpEpcs[0]
-		} else if 1 < length {
-			tmpEpc = tmpEpcs[l.random.Intn(length)]
+	var tmpEpc *epCall
+	var min int64 = math.MaxInt64
+	nlen := len(eps)
+	bgIndex := jkrand.Int()
+
+	for i := 0; i < nlen; i++ {
+
+		index := (bgIndex + i) % nlen
+		key := reflect.ValueOf(eps[index])
+		epc, ok := l.epCalls[key]
+
+		if !ok {
+			// 找不到说明是新实例，直接返回
+			tmpEpc = &epCall{ep: eps[index]}
+			l.epCalls[key] = tmpEpc
+			return tmpEpc
+		} else if epc.call == 0 {
+			return epc
+		} else if min > epc.call {
+			min = epc.call
+			tmpEpc = epc
+		}
+	}
+
+	return tmpEpc
+}
+
+func (l *least) get_least_when_bigger(eps []endpoint.Endpoint) *epCall {
+
+	var tmpEpc *epCall
+	var min int64 = math.MaxInt64
+	nlen := len(eps)
+
+	// 随机抽取LEAST_RAND_COUNT个选最小一个
+	for i := 0; i < jkutils.LEAST_RAND_COUNT; i++ {
+
+		index := jkrand.Int() % nlen
+		key := reflect.ValueOf(eps[index])
+		epc, ok := l.epCalls[key]
+
+		if !ok {
+			// 找不到说明是新实例，直接返回
+			tmpEpc = &epCall{ep: eps[index]}
+			l.epCalls[key] = tmpEpc
+			return tmpEpc
+		} else if epc.call == 0 {
+			return epc
+		} else if min > epc.call {
+			min = epc.call
+			tmpEpc = epc
 		}
 	}
 
@@ -136,8 +166,6 @@ func (l *least) Endpoint() (endpoint.Endpoint, error) {
 	l.try_reset_endpoints(endpoints)
 
 	tmpEpc := l.get_least(endpoints)
-
-	tmpEpc.last = time.Now()
 
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 

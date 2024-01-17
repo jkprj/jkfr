@@ -10,6 +10,7 @@ import (
 	jkos "github.com/jkprj/jkfr/os"
 	ucounter "github.com/jkprj/jkfr/prometheus/counter"
 	uhistogram "github.com/jkprj/jkfr/prometheus/histogram"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"golang.org/x/time/rate"
 
@@ -53,14 +54,11 @@ func MakeRateLimitMiddleware(limit rate.Limit) ActionMiddleware {
 }
 
 func MakePrometheusResponeTimeMiddleware(nameSpace, role string) ActionMiddleware {
+
+	labels := map[string]string{"APP": jkos.AppName(), "Role": role}
+	observer := uhistogram.GetObserver(nameSpace+"_Action_ResponeTime", labels)
+
 	return func(action string, next endpoint.Endpoint) endpoint.Endpoint {
-
-		if "" == action {
-			return next
-		}
-
-		labels := map[string]string{"APP": jkos.AppName(), "Role": role}
-		observer := uhistogram.GetObserver(nameSpace+"_Action_ResponeTime", labels)
 
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 
@@ -81,14 +79,21 @@ func MakePrometheusResponeTimeMiddleware(nameSpace, role string) ActionMiddlewar
 }
 
 func MakePrometheusActionRequestMiddleware(nameSpace, role string) ActionMiddleware {
+
+	a2c := map[string]prometheus.Counter{}
+
 	return func(action string, next endpoint.Endpoint) endpoint.Endpoint {
 
-		if "" == action {
+		if action == "" {
 			return next
 		}
 
-		labels := map[string]string{"APP": jkos.AppName(), "Role": role, "Action": action}
-		counter := ucounter.GetCounter(nameSpace+"_Action", labels)
+		counter, ok := a2c[action]
+		if !ok {
+			labels := map[string]string{"APP": jkos.AppName(), "Role": role, "Action": action}
+			counter = ucounter.GetCounter(nameSpace+"_Action", labels)
+			a2c[action] = counter
+		}
 
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			if uprometheus.Running {
@@ -103,10 +108,11 @@ func MakePrometheusActionRequestMiddleware(nameSpace, role string) ActionMiddlew
 }
 
 func MakePrometheusTotalRequestMiddleware(nameSpace, role string) ActionMiddleware {
-	return func(action string, next endpoint.Endpoint) endpoint.Endpoint {
 
-		labels := map[string]string{"APP": jkos.AppName(), "Role": role}
-		counter := ucounter.GetCounter(nameSpace+"_Request_Total", labels)
+	labels := map[string]string{"APP": jkos.AppName(), "Role": role}
+	counter := ucounter.GetCounter(nameSpace+"_Request_Total", labels)
+
+	return func(action string, next endpoint.Endpoint) endpoint.Endpoint {
 
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 
@@ -121,14 +127,21 @@ func MakePrometheusTotalRequestMiddleware(nameSpace, role string) ActionMiddlewa
 }
 
 func MakePrometheusActionRequestErrorMiddleware(nameSpace, role string) ActionMiddleware {
+
+	a2c := map[string]prometheus.Counter{}
+
 	return func(action string, next endpoint.Endpoint) endpoint.Endpoint {
 
-		if "" == action {
+		if action == "" {
 			return next
 		}
 
-		labels := map[string]string{"APP": jkos.AppName(), "Role": role, "Action": action}
-		counter := ucounter.GetCounter(nameSpace+"_Action_Error", labels)
+		counter, ok := a2c[action]
+		if !ok {
+			labels := map[string]string{"APP": jkos.AppName(), "Role": role, "Action": action}
+			counter = ucounter.GetCounter(nameSpace+"_Action_Error", labels)
+			a2c[action] = counter
+		}
 
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 
@@ -147,10 +160,11 @@ func MakePrometheusActionRequestErrorMiddleware(nameSpace, role string) ActionMi
 }
 
 func MakePrometheusTotalRequestErrorMiddleware(nameSpace, role string) ActionMiddleware {
-	return func(action string, next endpoint.Endpoint) endpoint.Endpoint {
 
-		labels := map[string]string{"APP": jkos.AppName(), "Role": role}
-		counter := ucounter.GetCounter(nameSpace+"_Request_Error_Total", labels)
+	labels := map[string]string{"APP": jkos.AppName(), "Role": role}
+	counter := ucounter.GetCounter(nameSpace+"_Request_Error_Total", labels)
+
+	return func(action string, next endpoint.Endpoint) endpoint.Endpoint {
 
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			response, err = next(ctx, request)

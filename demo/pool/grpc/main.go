@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -14,6 +15,7 @@ import (
 	hellogrpc "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/client/grpc"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var th_count int = 64
@@ -46,8 +48,8 @@ func main() {
 
 	init_param()
 
-	// go test_pool()
-	loop_test()
+	go test_pool()
+	// loop_test()
 
 	statistics()
 }
@@ -70,10 +72,10 @@ func test_pool() {
 		func(conn *grpc.ClientConn) (server interface{}, err error) {
 			return hellogrpc.New(conn)
 		},
-		grpc.WithInsecure(),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 
-	grpcPools, err := grpc_pools.NewGRPCPools([]string{server}, opt)
+	grpcPools, err := grpc_pools.NewGRPCPools(strings.Split(server, ","), opt)
 	if nil != err {
 		log.Errorw("NewDefaultGRPCPoolsWithAddr error", "error", err)
 		return
@@ -105,7 +107,7 @@ func test_pool() {
 		}()
 	}
 
-	time.Sleep(time.Second * 5)
+	time.Sleep(time.Hour * 64)
 
 	bexit = true
 

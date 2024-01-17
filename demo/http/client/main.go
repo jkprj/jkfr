@@ -7,8 +7,9 @@ import (
 	"time"
 
 	// jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
+
 	jkhttp "github.com/jkprj/jkfr/gokit/transport/http"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklog "github.com/jkprj/jkfr/log"
 )
 
@@ -120,12 +121,12 @@ func queryByClientHandle() {
 
 func queryByGlobleFuntionWithOpetion() {
 	err := jkhttp.RegistryNewClient("http",
-		jkhttp.ClientStrategy(jktrans.STRATEGY_RANDOM),
+		jkhttp.ClientStrategy(jkutils.STRATEGY_RANDOM),
 		jkhttp.ClientLimit(2),
 		jkhttp.ClientConsulTags("jinkun"),
 		jkhttp.ClientRetry(5),
 		jkhttp.ClientTimeOut(10),
-		jkhttp.ClientScheme(jktrans.HTTP),
+		jkhttp.ClientScheme(jkutils.HTTP),
 	)
 	// or
 	// client, err := jkhttp.NewClient("http",
@@ -164,12 +165,12 @@ func queryByGlobleFuntionWithOpetion() {
 
 func queryByClientHandleWithOption() {
 	client, err := jkhttp.NewClient("http",
-		jkhttp.ClientStrategy(jktrans.STRATEGY_RANDOM),
+		jkhttp.ClientStrategy(jkutils.STRATEGY_RANDOM),
 		jkhttp.ClientLimit(2),
 		jkhttp.ClientConsulTags("jinkun"),
 		jkhttp.ClientRetry(5),
 		jkhttp.ClientTimeOut(10),
-		jkhttp.ClientScheme(jktrans.HTTP),
+		jkhttp.ClientScheme(jkutils.HTTP),
 	)
 	if nil != err {
 		jklog.Errorw("jkhttp.NewClient fail", "err", err)
@@ -251,7 +252,7 @@ func queryWithConfFileOption() {
 func testStrategy() {
 	ps := person{Name: "LiLei", Age: 13, Sex: "man"}
 
-	jkhttp.RegistryNewClient("http", jkhttp.ClientStrategy(jktrans.STRATEGY_RANDOM)) // 默认策略是轮询，其他策略需要设置ClientStrategy 选项设置
+	jkhttp.RegistryNewClient("http", jkhttp.ClientStrategy(jkutils.STRATEGY_RANDOM)) // 默认策略是轮询，其他策略需要设置ClientStrategy 选项设置
 	for i := 0; i < 10; i++ {
 		re := new(res)
 		jkhttp.JSPost("http", "/test?Action=WhatName", ps, re)

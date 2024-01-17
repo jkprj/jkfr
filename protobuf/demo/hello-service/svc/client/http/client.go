@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -31,7 +30,7 @@ var (
 	_ = httptransport.NewClient
 	_ = fmt.Sprint
 	_ = bytes.Compare
-	_ = ioutil.NopCloser
+	_ = io.NopCloser
 )
 
 // New returns a service backed by an HTTP server living at the remote

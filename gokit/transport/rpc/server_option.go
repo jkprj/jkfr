@@ -4,9 +4,8 @@ import (
 	"net/rpc"
 
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
-	"github.com/jkprj/jkfr/gokit/utils"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklog "github.com/jkprj/jkfr/log"
 	jkos "github.com/jkprj/jkfr/os"
 
@@ -57,7 +56,7 @@ func defaultServerConfig(name string) *ServerConfig {
 	cfg.PrometheusNameSpace = jkos.GetEnvString("S_PROMETHEUS_NAME_SPACE", name)
 	cfg.RpcPath = jkos.GetEnvString("S_RPC_PATH", rpc.DefaultRPCPath)
 	cfg.RpcName = jkos.GetEnvString("S_RPC_NAME", "")
-	cfg.Codec = jkos.GetEnvString("S_CODEC", jktrans.CODEC_GOB)
+	cfg.Codec = jkos.GetEnvString("S_CODEC", jkutils.CODEC_GOB)
 	cfg.RpcDebugPath = jkos.GetEnvString("S_RPC_DEBUG_PATH", rpc.DefaultDebugPath)
 	cfg.RateLimit = rate.Limit(jkos.GetEnvInt("S_RATE_LIMIT", 0))
 
@@ -101,13 +100,13 @@ func newServerConfig(name string, ops ...ServerOption) *ServerConfig {
 		op(cfg)
 	}
 
-	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jktrans.ROLE_SERVER, cfg.RateLimit)
+	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jkutils.ROLE_SERVER, cfg.RateLimit)
 
 	if 0 < len(cfg.tmpActionMiddlewares) {
 		cfg.ActionMiddlewares = cfg.tmpActionMiddlewares
 	}
 
-	err := utils.ResetServerAddr(&cfg.ServerAddr, &cfg.BindAddr)
+	err := jkutils.ResetServerAddr(&cfg.ServerAddr, &cfg.BindAddr)
 	if nil != err {
 		jklog.Panicw("utils.ResetServerAddr error", "ServerAddr", cfg.ServerAddr, "BindAddr", cfg.BindAddr, "error", err)
 	}
@@ -248,6 +247,6 @@ func ServerConfigFile(cfgPath string) ServerOption {
 	return func(cfg *ServerConfig) {
 		cfg.ConfigPath = cfgPath
 		config := serverConfig{Cfg: cfg}
-		utils.ReadConfigFile(cfg.ConfigPath, &config)
+		jkutils.ReadConfigFile(cfg.ConfigPath, &config)
 	}
 }

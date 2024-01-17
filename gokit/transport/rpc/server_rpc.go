@@ -6,7 +6,7 @@ import (
 	"net/rpc"
 	"net/rpc/jsonrpc"
 
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklog "github.com/jkprj/jkfr/log"
 )
 
@@ -39,7 +39,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 	io.WriteString(conn, "HTTP/1.0 "+connected+"\n\n")
 
-	if jktrans.CODEC_JSON == s.codec {
+	if jkutils.CODEC_JSON == s.codec {
 		s.ServeCodec(jsonrpc.NewServerCodec(conn))
 	} else {
 		s.ServeConn(conn)

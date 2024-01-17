@@ -7,9 +7,8 @@ import (
 	"net/rpc"
 	"time"
 
-	"github.com/jkprj/jkfr/log"
-
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	jklog "github.com/jkprj/jkfr/log"
 )
 
 type RpcPool struct {
@@ -30,7 +29,7 @@ func NewRpcPool(o *jkpool.Options) (p *RpcPool, err error) {
 
 	p.pool, err = jkpool.NewPool(p.o)
 	if nil != err {
-		log.Errorw("NewPool fail", "error", err)
+		jklog.Errorw("NewPool fail", "error", err)
 		return nil, err
 	}
 
@@ -47,7 +46,7 @@ func (rp *RpcPool) call(ctx context.Context, serviceMethod string, args interfac
 
 	client, ok := c.Client.(*rpc.Client)
 	if !ok {
-		log.Errorw("transfer *rpc.Client fail")
+		jklog.Errorw("transfer *rpc.Client fail")
 		return errors.New("tranfer to rpc.Client fail")
 	}
 
@@ -104,11 +103,11 @@ func (rp *RpcPool) CallWithContext(ctx context.Context, serviceMethod string, ar
 }
 
 func (rp *RpcPool) Call(serviceMethod string, args interface{}, reply interface{}) error {
-	return rp.CallWithContext(nil, serviceMethod, args, reply)
+	return rp.CallWithContext(context.TODO(), serviceMethod, args, reply)
 }
 
 func (rp *RpcPool) GoCall(serviceMethod string, args interface{}, reply interface{}, done chan *rpc.Call) *rpc.Call {
-	return rp.GoCallWithContext(nil, serviceMethod, args, reply, done)
+	return rp.GoCallWithContext(context.TODO(), serviceMethod, args, reply, done)
 }
 
 func (rp *RpcPool) GoCallWithContext(ctx context.Context, serviceMethod string, args interface{}, reply interface{}, done chan *rpc.Call) *rpc.Call {
@@ -128,7 +127,7 @@ func (rp *RpcPool) GoCallWithContext(ctx context.Context, serviceMethod string, 
 	go func() {
 		call.Error = rp.CallWithContext(ctx, serviceMethod, args, reply)
 		if nil != call.Error {
-			log.Errorw("RpcPool.call fail", "error", call.Error)
+			jklog.Errorw("RpcPool.call fail", "error", call.Error)
 		}
 
 		done <- call

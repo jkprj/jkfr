@@ -5,9 +5,8 @@ import (
 	"strings"
 
 	jkregistry "github.com/jkprj/jkfr/gokit/registry"
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkendpoint "github.com/jkprj/jkfr/gokit/transport/endpoint"
-	"github.com/jkprj/jkfr/gokit/utils"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jkos "github.com/jkprj/jkfr/os"
 
 	kithttp "github.com/go-kit/kit/transport/http"
@@ -77,9 +76,9 @@ func defaultClientConfig(name string) *ClientConfig {
 	cfg.GetAction = defaultClientGetAction
 
 	cfg.ConsulTags = jkos.GetEnvStrings("C_CONSUL_TAGS", ",", nil)
-	cfg.Strategy = jkos.GetEnvString("C_STRATEGY", jktrans.STRATEGY_ROUND)
+	cfg.Strategy = jkos.GetEnvString("C_STRATEGY", jkutils.STRATEGY_ROUND)
 	cfg.PrometheusNameSpace = jkos.GetEnvString("C_PROMETHEUS_NAME_SPACE", name)
-	cfg.Scheme = jkos.GetEnvString("C_SCHEME", jktrans.HTTP)
+	cfg.Scheme = jkos.GetEnvString("C_SCHEME", jkutils.HTTP)
 	cfg.Retry = jkos.GetEnvInt("C_RETRY", 3)
 	cfg.RateLimit = rate.Limit(jkos.GetEnvInt("C_RATE_LIMIT", 0))
 	cfg.TimeOut = jkos.GetEnvInt("C_TIME_OUT", 60)
@@ -115,7 +114,7 @@ func newClientConfig(name string, ops ...ClientOption) *ClientConfig {
 		op(cfg)
 	}
 
-	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jktrans.ROLE_CLIENT, cfg.RateLimit)
+	cfg.ActionMiddlewares = jkendpoint.DefaultMiddleware(cfg.PrometheusNameSpace, jkutils.ROLE_CLIENT, cfg.RateLimit)
 
 	if 0 < len(cfg.tmpActionMiddlewares) {
 		cfg.ActionMiddlewares = cfg.tmpActionMiddlewares
@@ -138,7 +137,7 @@ func ClientPrometheusNameSpace(prometheusnamespace string) ClientOption {
 
 func ClientScheme(scheme string) ClientOption {
 	return func(cfg *ClientConfig) {
-		if jktrans.HTTP == scheme || jktrans.HTTPS == scheme {
+		if jkutils.HTTP == scheme || jkutils.HTTPS == scheme {
 			cfg.Scheme = scheme
 		}
 	}
@@ -216,6 +215,6 @@ func ClientConfigFile(cfgPath string) ClientOption {
 
 		cfg.ConfigPath = cfgPath
 		config := clientConfig{Cfg: cfg}
-		utils.ReadConfigFile(cfg.ConfigPath, &config)
+		jkutils.ReadConfigFile(cfg.ConfigPath, &config)
 	}
 }

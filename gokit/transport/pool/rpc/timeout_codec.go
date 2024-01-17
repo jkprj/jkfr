@@ -11,8 +11,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
 	jkpool "github.com/jkprj/jkfr/gokit/transport/pool"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 	jklog "github.com/jkprj/jkfr/log"
 )
 
@@ -61,7 +61,7 @@ func NewTimeoutCodec(codec rpc.ClientCodec, conn net.Conn, readTimeout, writeTim
 
 func NewTimeoutCodecEx(conn net.Conn, o *jkpool.Options) rpc.ClientCodec {
 
-	if jktrans.CODEC_JSON == o.Codec {
+	if jkutils.CODEC_JSON == o.Codec {
 		return NewTimeoutCodec(jsonrpc.NewClientCodec(conn), conn, o.ReadTimeout, o.WriteTimeout)
 	}
 
@@ -170,7 +170,7 @@ func (tc *timeoutCodec) getTimeoutReq() *rpc.Request {
 	}
 
 	// jklog.Infow("getTimeoutReq ", "sub:", time.Now().Sub(rq.reqTime), "tc.readTimeout", tc.readTimeout, "reqcount", tc.liRpcReq.Len())
-	if time.Now().Sub(rq.reqTime) > tc.readTimeout {
+	if time.Since(rq.reqTime) > tc.readTimeout {
 		rq.err = ErrTimeout
 		tc.mtReq.Unlock()
 		return rq.req

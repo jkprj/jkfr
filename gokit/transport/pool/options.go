@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	jktrans "github.com/jkprj/jkfr/gokit/transport"
+	jkutils "github.com/jkprj/jkfr/gokit/utils"
 )
 
 type PoolClient interface {
@@ -25,7 +25,7 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
-//Options pool options
+// Options pool options
 type Options struct {
 	ServerAddr string
 	Codec      string
@@ -45,7 +45,7 @@ type Options struct {
 // NewOptions returns a new newOptions instance with sane defaults.
 func NewOptions() *Options {
 	o := &Options{}
-	o.Codec = jktrans.CODEC_GOB
+	o.Codec = jkutils.CODEC_GOB
 	o.InitCap = 2
 	o.MaxCap = 16
 	o.DialTimeout = 10 * time.Second
