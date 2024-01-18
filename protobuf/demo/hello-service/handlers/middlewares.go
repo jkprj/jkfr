@@ -31,14 +31,6 @@ func WrapEndpoints(in svc.Endpoints) svc.Endpoints {
 	return in
 }
 
-var serverHandle pb.HelloServer
-
-// RegisterServer register server handle
-func RegisterServer(in pb.HelloServer) {
-	serverHandle = in
-}
-
-// WrapService asdfasdf
 func WrapService(in pb.HelloServer) pb.HelloServer {
-	return serverHandle
+	return in
 }

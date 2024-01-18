@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"github.com/jkprj/jkfr/protobuf/demo/hello-service/svc"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,4 +16,8 @@ func InterruptHandler(errc chan<- error) {
 	// Place whatever shutdown handling you want here
 
 	errc <- terminateError
+}
+
+func SetConfig(cfg svc.Config) svc.Config {
+	return cfg
 }

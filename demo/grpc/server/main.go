@@ -3,7 +3,6 @@ package main
 import (
 	"compress/gzip"
 	"context"
-	"fmt"
 	"runtime"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	jkgrpc "github.com/jkprj/jkfr/gokit/transport/grpc"
 	jklog "github.com/jkprj/jkfr/log"
 	helloPB "github.com/jkprj/jkfr/protobuf/demo"
-	helloHandlers "github.com/jkprj/jkfr/protobuf/demo/hello-service/handlers"
 	helloSvc "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc"
 	helloServer "github.com/jkprj/jkfr/protobuf/demo/hello-service/svc/server"
 
@@ -55,9 +53,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	jklog.InitLogger()
 
-	helloHandlers.RegisterServer(jkhandlers.NewService())
-	endpoints := helloServer.NewEndpoints()
-	fmt.Printf("%x", &endpoints)
+	endpoints := helloServer.NewEndpoints(jkhandlers.NewService())
 
 	// runDefaultServer(&endpoints)
 	// runServerWithOption(&endpoints)
@@ -119,11 +115,9 @@ func runServerWithConfigFileOption(endpoints *helloSvc.Endpoints) {
 }
 
 func runMutiServer() {
-	helloHandlers.RegisterServer(jkhandlers.NewService())
-	endpoints1 := helloServer.NewEndpoints()
+	endpoints1 := helloServer.NewEndpoints(jkhandlers.NewService())
 	go jkgrpc.RunServerWithServerAddr("test", "192.168.213.184:9090", &endpoints1, RegisterServer)
 
-	helloHandlers.RegisterServer(jkhandlers.NewService())
-	endpoints2 := helloServer.NewEndpoints()
+	endpoints2 := helloServer.NewEndpoints(jkhandlers.NewService())
 	jkgrpc.RunServerWithServerAddr("test", "127.0.0.1:9090", &endpoints2, RegisterServer)
 }
